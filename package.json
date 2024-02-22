@@ -1,0 +1,28 @@
+{
+  "name": "gptscript-browser-plugin",
+  "version": "1.0.0",
+  "description": "## Project Description",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.41.2",
+    "@types/node": "^20.11.19",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "eslint": "^8.56.0",
+    "eslint-config-standard-with-typescript": "^43.0.1",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-promise": "^6.1.1",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "ts-node": "^10.9.2"
+  }
+}

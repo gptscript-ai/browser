@@ -1,0 +1,26 @@
+Tools: sys.read, browse-html, search-and-query
+
+Browse the website at www.bing.com, search and query the result using keyword `acorn labs`.
+
+---
+name: browse-html
+description: browse and summarise website html
+args: website: the website url to browse. The url should have https protocol prepend.
+
+#!/bin/bash
+
+npx ts-node html-clean.ts ${website}
+
+---
+name: search-and-query
+description: search and query the result from website. It should browse the html and figure out what is the id of the search input box element inside html. Provide that as an input as args.
+args: website: the url of the website. Must have https protocol
+args: boxId: the id of search box input element
+args: keyword: the keyword user want to search
+
+#!/bin/bash
+
+npx ts-node search-and-query ${website} ${boxId} ${keyword}
+
+
+
