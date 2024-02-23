@@ -1,0 +1,77 @@
+name: browse-website
+description: browse website.
+args: sessionID: generate a unique random session id if empty and reuse it for the following api calls.
+args: storagePath: the storage path to cookies and userdata.
+args: website: the website url to browse. The url should have https protocol prepend.
+args: print: whether to print output. Should be true or false
+
+#!/bin/bash
+set -x
+
+curl -sLf -X POST -H 'Content-Type: application/json' -d '{"storagePath": "'"${storagePath}"'", "sessionID": "'"${sessionID}"'", "website": "'"${website}"'", "action": "browse", "print": '"${print}"'}' http://localhost:9080
+
+---
+name: click-button
+description: Click buttons from website. It should call browse tool to browse current page first and use keyword to figure out the button name.
+args: sessionID: session id for existing open browser.
+args: name: the button name
+args: exact: whether to do an exact match
+
+#!/bin/bash
+set -x
+
+curl -sLf -X POST -H 'Content-Type: application/json' -d '{"sessionID": "'"${sessionID}"'", "action": "click-button", "name": "'"${name}"'", "exact": '"${exact}"'}' http://localhost:9080
+
+---
+name: click-link
+description: Click links on elements from website. Use `browse-website` tool with keyword to figure out the link.
+args: sessionID: session id for existing open browser.
+args: link: the link to click
+
+#!/bin/bash
+set -x
+
+curl -sLf -X POST -H 'Content-Type: application/json' -d '{"sessionID": "'"${sessionID}"'", "action": "click-link", "link": "'"${link}"'", "keyword": "'"${keyword}"'"}' http://localhost:9080
+
+---
+name: fill
+description: fill text content into website. It should browse the website and figure out the id of the element to fill in.
+args: id: the id of the element to fill in
+args: content: content to fill in
+args: sessionID: session id for existing open browser.
+
+#!/bin/bash
+set -x
+
+curl -sLf -X POST -H 'Content-Type: application/json' -d '{"sessionID": "'"${sessionID}"'", "website": "'"${website}"'", "action": "fill", "id": "'"${id}"'", "content": "'"${content}"'"}' http://localhost:9080
+
+---
+name: search
+description: search current page and find elements based on keyword.
+args: sessionID: generate a unique random session id if empty and reuse it for the following api calls.
+args: storagePath: the storage path to cookies and userdata.
+args: keyword: the keyword to search elements
+
+#!/bin/bash
+set -x
+
+curl -sLf -X POST -H 'Content-Type: application/json' -d '{"storagePath": "'"${storagePath}"'", "sessionID": "'"${sessionID}"'", "action": "search", "keyword": "'"${keyword}"'"}' http://localhost:9080
+
+---
+name: get-storage-path
+description: calculate chrome userDataDir and provide it as input. Only do it when user wants to reuse existing user data and cookies. Provide output as storagePath to other tools.
+
+#!/bin/bash
+
+# Kill existing chrome browser first
+ps -ef | grep Chrome | grep -v grep | awk '{print $2}' | xargs kill -9
+OS="$(uname -s)"
+
+case "$OS" in
+    Linux*)     dir="${HOME}/.config/google-chrome";;
+    Darwin*)    dir="${HOME}/Library/Application Support/Google/Chrome";;
+esac
+
+echo "$dir"
+
+

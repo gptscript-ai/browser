@@ -1,0 +1,7 @@
+Tools: browse-website from ../tools/tools.gpt, search from ../tools/tools.gpt, click-link from ../tools/tools.gpt, click-button from ../tools/tools.gpt, fill from ../tools/tools.gpt, get-storage-path from ../tools/tools.gpt
+
+Reuse existing browser userdata and session.
+
+1. Browse https://twitter.com/ibuildthecloud 
+2. Search and find `Posts` and click on it.
+3. Browse and give me a summary of what darren is complaining recently.

@@ -1,0 +1,13 @@
+Tools: browse-website from ../tools/tools.gpt, search from ../tools/tools.gpt, click-link from ../tools/tools.gpt, click-button from ../tools/tools.gpt, fill from ../tools/tools.gpt, get-storage-path from ../tools/tools.gpt
+
+Perform each step one by one, don't move on to the next step until current step is done.
+
+Reuse existing browser userdata and session.
+
+1. Browse https://github.com/gptscript-ai/gptscript/pull/83.
+2. Search current page and find `Add your review`, then click on it.
+3. Search current page and find `Review changes` button, then click on it.
+4. Search current page and find `PR comment`, the element should have placehold `Leave a comment`. Then fill `LGTM` to it. 
+5. Search current page and find `Submit review` button, then click on it.
+
+Use storagePath /Users/daishan/Library/Application Support/Google/Chrome for userdata.
