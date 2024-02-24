@@ -1,15 +1,18 @@
 Tools: sys.read, browse-html, search-and-query
 
 Browse the website at www.bing.com, search and query the result using keyword `acorn labs`.
+If a site presents a challenge to access, retry in headful mode.
+
 
 ---
 name: browse-html
-description: browse and summarise website html
+description: browse a website
 args: website: the website url to browse. The url should have https protocol prepend.
+args: headful: set to true to browse in headful mode. Default is false (headless).
 
 #!/bin/bash
 
-npx ts-node html-clean.ts ${website}
+npx ts-node html-clean.ts ${website} ${headful}
 
 ---
 name: search-and-query

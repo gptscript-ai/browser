@@ -4,12 +4,16 @@ import * as cheerio from 'cheerio'
 async function main (): Promise<void> {
   const args = process.argv.slice(2)
 
+  let headful = false
   const website = args[0]
+  if (args.length > 1) {
+    headful = args[1] === 'true'
+  }
 
   const context = await chromium.launchPersistentContext(
     '',
     {
-      headless: true,
+      headless: !headful,
       channel: 'chrome'
     })
   const page = await context.newPage()
