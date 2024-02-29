@@ -1,8 +1,10 @@
 # Gptscript browser tool
 
-This is a tool for gptscript to be able to browser website, navigate pages and perform certain actions.
+This tool enables Gptscript to browse websites, navigate through pages, and execute specific actions seamlessly.
 
 ## Quick start
+
+To get started, execute the following commands:
 
 ```
 git clone https://github.com/gptscript-ai/browser
@@ -18,34 +20,30 @@ gptscript ./examples/coachella-browse.gpt
 
 ## Examples
 
-There are some built-in [examples](./examples/) to show you how to ask browser tool to navigate between websites.
+Explore our built-in examples to learn how to navigate between websites using the browser tool:
 
-[Github Issue creation](./examples/github-create-issue.gpt)
+- [Creating a GitHub Issue](https://github.com/gptscript-ai/browser/blob/main/examples/github-create-issue.gpt)
+- [Approving a GitHub PR](https://github.com/gptscript-ai/browser/blob/main/examples/github-approve-pr.gpt)
+- [Clicking a GitHub Repository](https://github.com/gptscript-ai/browser/blob/main/examples/github-click-repo.gpt)
 
-[Github PR approval](./examples/github-approve-pr.gpt)
-
-[Github Click repo](./examples/github-click-repo.gpt)
-
-Video examples
-
-[Github Issue creation](https://www.loom.com/share/c75bc647192c48879762f586d36eacc9)
-
-[Github PR approval](https://www.loom.com/share/3af5eb84480049298e343bb01e10cd47)
+Video Demonstrations:
+- [Creating a GitHub Issue](https://www.loom.com/share/c75bc647192c48879762f586d36eacc9)
+- [Approving a GitHub PR](https://www.loom.com/share/3af5eb84480049298e343bb01e10cd47)
 
 ## Reuse existing cookies and sessions
 
-If you want to reuse your existing browser user data and cookies, give prompt like
+To reuse your existing browser user data and cookies, use the following prompt:
 
 ```
 Reuse existing browser userdata and session.
 ```
 
-The tool will kill existing chrome process and launch a new browser with your existing session.
+This action will terminate any existing Chrome processes and launch a new browser session with your saved data.
 
 ## How it works
 
-The tool itself will be running as a http server served as daemon, controlling browser action and maintain sessions. 
+The tool operates as an HTTP server running in the background, managing browser actions and sessions.
 
-Each gptscript invoke will be assigned to a speficic session that belong to the context, so all the actions will happen in one single page.
+Each Gptscript command is linked to a unique session associated with the context, ensuring that all actions are performed within a single page.
 
-If you reuse existing browser sessions, it will quit existing chrome processes.
+Reusing browser sessions will close any active Chrome processes.
