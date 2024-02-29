@@ -8,7 +8,7 @@ import { fill } from './fill'
 
 async function main (): Promise<void> {
   const app = express()
-  const port = 9080
+  const port = 9888
   app.use(bodyParser.json())
 
   const contextMap: Record<string, BrowserContext> = {}
@@ -31,7 +31,7 @@ async function main (): Promise<void> {
       context = await chromium.launchPersistentContext(
         storagePath,
         {
-          headless: false,
+          headless: data.headless === 'true',
           viewport: null,
           channel: 'chrome',
           args: ['--start-maximized'],

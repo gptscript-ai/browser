@@ -1,0 +1,11 @@
+Tools: browse-website from ../tools/tools.gpt, search from ../tools/tools.gpt, click-link from ../tools/tools.gpt, click-button from ../tools/tools.gpt, fill from ../tools/tools.gpt, get-storage-path from ../tools/tools.gpt
+
+Perform each step one by one, don't move on to the next step until current step is done.
+
+Reuse existing browser userdata and session.
+
+1. Browse github.com/gptscript-ai.
+2. Search current page and find `Repositories`, then click on it.
+3. Search current page and find `gptscript` Repo and then click on it.
+4. Search and find `Issues` page and click on it.
+5. Browse the current page and give me a summary of all the issues.

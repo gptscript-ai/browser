@@ -3,12 +3,11 @@ description: browse website.
 args: sessionID: generate a unique random session id if empty and reuse it for the following api calls.
 args: storagePath: the storage path to cookies and userdata.
 args: website: the website url to browse. The url should have https protocol prepend.
-args: print: whether to print output. Should be true or false
+args: print: whether to print output. Provide true if asked for summarizing content.
+args: action: Must provide `browse` as action.
+args: headless: Whether to launch actual browsr. Provide true if it is specifically asked to not launch a browser. Alse provide false.
 
-#!/bin/bash
-set -x
-
-curl -sLf -X POST -H 'Content-Type: application/json' -d '{"storagePath": "'"${storagePath}"'", "sessionID": "'"${sessionID}"'", "website": "'"${website}"'", "action": "browse", "print": '"${print}"'}' http://localhost:9080
+#!http://localhost:9888
 
 ---
 name: click-button
@@ -16,22 +15,18 @@ description: Click buttons from website. It should call browse tool to browse cu
 args: sessionID: session id for existing open browser.
 args: name: the button name
 args: exact: whether to do an exact match
+args: action: Must provide `click-button` as action.
 
-#!/bin/bash
-set -x
-
-curl -sLf -X POST -H 'Content-Type: application/json' -d '{"sessionID": "'"${sessionID}"'", "action": "click-button", "name": "'"${name}"'", "exact": '"${exact}"'}' http://localhost:9080
+#!http://localhost:9888
 
 ---
 name: click-link
 description: Click links on elements from website. Use `browse-website` tool with keyword to figure out the link.
 args: sessionID: session id for existing open browser.
 args: link: the link to click
+args: action: Must provide `click-link` as action.
 
-#!/bin/bash
-set -x
-
-curl -sLf -X POST -H 'Content-Type: application/json' -d '{"sessionID": "'"${sessionID}"'", "action": "click-link", "link": "'"${link}"'", "keyword": "'"${keyword}"'"}' http://localhost:9080
+#!http://localhost:9888
 
 ---
 name: fill
@@ -39,23 +34,19 @@ description: fill text content into website. It should browse the website and fi
 args: id: the id of the element to fill in
 args: content: content to fill in
 args: sessionID: session id for existing open browser.
+args: action: Must provide `fill` as action.
 
-#!/bin/bash
-set -x
-
-curl -sLf -X POST -H 'Content-Type: application/json' -d '{"sessionID": "'"${sessionID}"'", "website": "'"${website}"'", "action": "fill", "id": "'"${id}"'", "content": "'"${content}"'"}' http://localhost:9080
+#!http://localhost:9888
 
 ---
 name: search
 description: search current page and find elements based on keyword.
-args: sessionID: generate a unique random session id if empty and reuse it for the following api calls.
+args: sessionID: session id for existing open browser.
 args: storagePath: the storage path to cookies and userdata.
 args: keyword: the keyword to search elements
+args: action: Must provide `search` as action.
 
-#!/bin/bash
-set -x
-
-curl -sLf -X POST -H 'Content-Type: application/json' -d '{"storagePath": "'"${storagePath}"'", "sessionID": "'"${sessionID}"'", "action": "search", "keyword": "'"${keyword}"'"}' http://localhost:9080
+#!http://localhost:9888
 
 ---
 name: get-storage-path

@@ -27,16 +27,16 @@ export async function browse (context: BrowserContext, website: string, sessionI
     await page.goto(website)
   }
   await delay(1000)
+  let resp: string = ''
   if (print) {
     const html = await page.content()
     const $ = cheerio.load(html)
-    let resp: string = ''
     $('body').each(function () {
       resp += $(this).text()
     })
-    return resp
   }
-  return 'sessionID: ' + sessionID + '\n'
+  resp += `sessionID: ${sessionID}\n`
+  return resp
 }
 
 export function summarize (html: string, keyword: string): string {
