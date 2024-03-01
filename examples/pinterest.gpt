@@ -4,8 +4,6 @@ Perform each step one by one, don't move on to the next step until current step 
 
 Reuse existing browser userdata and session.
 
-1. Browse github.com/gptscript-ai.
-2. Search current page and find `Repositories`, then click on it.
-3. Search current page and find `gptscript` Repo and then click on it.
-4. Search and find `Issues` page and click on it.
-5. Browse the current page and give me a summary of all the issues.
+1. Browse www.pinterest.com
+2. Fill search input box with garden ideas.
+3. Press enter.

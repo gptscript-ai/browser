@@ -5,6 +5,7 @@ import { chromium } from 'playwright'
 import { search, browse } from './browse'
 import { clickButton, clickLink } from './click'
 import { fill } from './fill'
+import { enter } from './enter'
 
 async function main (): Promise<void> {
   const app = express()
@@ -16,10 +17,10 @@ async function main (): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
   app.post('/', async (req: Request, res: Response) => {
     const data = req.body
+    console.log(data)
     const action = data.action
     const website: string = data.website ?? ''
     const keyword: string = data.keyword ?? ''
-    const id: string = data.id ?? ''
     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     const sessionID: string = data.sessionID || new Date().getTime().toString()
     const storagePath: string = data.storagePath ?? ''
@@ -41,21 +42,23 @@ async function main (): Promise<void> {
     }
     if (action === 'browse') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      res.send(await browse(context, website, sessionID, data.print ?? false))
+      res.send(await browse(context, website, sessionID, data.print === 'true'))
     } else if (action === 'search') {
-      res.send(await search(context, website, keyword))
+      res.send(await search(context, website, sessionID, keyword))
     } else if (action === 'click-link') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       await clickLink(context, res, data.link ?? '')
       res.end()
     } else if (action === 'click-button') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await clickButton(context, res, data.name ?? '', data.exact as boolean)
+      await clickButton(context, res, data.name ?? '', data.exact === 'true')
       res.end()
     } else if (action === 'fill') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await fill(context, website, id, data.content ?? '')
+      await fill(context, website, data.id ?? '', data.name ?? '', data.content ?? '')
       res.end()
+    } else if (action === 'enter') {
+      await enter(context, res, data.input as string)
     } else {
       res.send('Invalid action')
     }

@@ -1,6 +1,6 @@
 name: browse-website
-description: browse website.
-args: sessionID: generate a unique random session id if empty and reuse it for the following api calls.
+description: browse website. Reuse session id if possible.
+args: sessionID: session id for existing open browser. 
 args: storagePath: the storage path to cookies and userdata.
 args: website: the website url to browse. The url should have https protocol prepend.
 args: print: whether to print output. Provide true if asked for summarizing content.
@@ -30,8 +30,9 @@ args: action: Must provide `click-link` as action.
 
 ---
 name: fill
-description: fill text content into website. It should browse the website and figure out the id of the element to fill in.
-args: id: the id of the element to fill in
+description: fill text content into website.
+args: name: the name of the element to fill
+args: id: the id of the element to fill
 args: content: content to fill in
 args: sessionID: session id for existing open browser.
 args: action: Must provide `fill` as action.
@@ -45,6 +46,14 @@ args: sessionID: session id for existing open browser.
 args: storagePath: the storage path to cookies and userdata.
 args: keyword: the keyword to search elements
 args: action: Must provide `search` as action.
+
+#!http://localhost:9888
+
+---
+name: enter-key
+description: Only invoke when user specifically ask to press certain keyboard input to the current page. Provide keyboard input into current page based on user instruction. 
+args: input: the keyboard input.
+args: action: must provide `enter` as action.
 
 #!http://localhost:9888
 

@@ -1,4 +1,4 @@
-Tools: browse-website from ../tools/tools.gpt, search from ../tools/tools.gpt, click-link from ../tools/tools.gpt, click-button from ../tools/tools.gpt, fill from ../tools/tools.gpt, get-storage-path from ../tools/tools.gpt
+Tools: browse-website from ../tools/tools.gpt, search from ../tools/tools.gpt, click-link from ../tools/tools.gpt, click-button from ../tools/tools.gpt, fill from ../tools/tools.gpt, get-storage-path from ../tools/tools.gpt, enter-key from ../tools/tools.gpt
 
 Perform each step one by one, don't move on to the next step until current step is done.
 
@@ -7,7 +7,7 @@ Reuse existing browser userdata and session.
 1. Browse github.com/gptscript-ai/browser.
 2. Search current page and find `Issues`, then click on it.
 3. Search current page and find `New Issue`, then click on it.
-4. Search current page and find `Add a title`, and fill in "this is a test title".
-5. Search current page and find `Add a description`, and fill in "this is a test description".
-6. Search current page and find `Submit new issue`, and click on it.
-7. Search current page and find `Close issue` using exact match, then click on it.
+4. Search current page and find `issue title`, and then fill with "this is a test title"
+5. Search current page and find `issue description`, and then fill with "this is a test description".
+6. Click on `Submit new issue`.
+7. Click on `Close issue` using exact match.

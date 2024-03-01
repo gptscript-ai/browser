@@ -9,7 +9,7 @@ To get started, execute the following commands:
 ```
 git clone https://github.com/gptscript-ai/browser
 
-cd gptscript-browser-tool
+cd browser
 
 npm install
 

@@ -2,7 +2,7 @@ import { type BrowserContext, type Page } from 'playwright'
 import * as cheerio from 'cheerio'
 import { delay } from './delay'
 
-export async function search (context: BrowserContext, website: string, keyword: string): Promise<string> {
+export async function search (context: BrowserContext, website: string, sessionID: string, keyword: string): Promise<string> {
   let page: Page
   const pages = context.pages()
   if (pages.length > 1) {
@@ -13,7 +13,8 @@ export async function search (context: BrowserContext, website: string, keyword:
   }
   await delay(1000)
   const html = await page.content()
-  const resp = summarize(html, keyword)
+  let resp = summarize(html, keyword)
+  resp += `sessionID: ${sessionID}\n`
   return resp
 }
 
