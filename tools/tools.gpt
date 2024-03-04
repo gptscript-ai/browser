@@ -1,5 +1,5 @@
 name: browse-website
-description: browse website. Reuse session id if possible.
+description: browse website. Reuse session id from user inputs if possible.
 args: sessionID: session id for existing open browser. 
 args: storagePath: the storage path to cookies and userdata.
 args: website: the website url to browse. The url should have https protocol prepend.
