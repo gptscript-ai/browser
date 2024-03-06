@@ -50,6 +50,9 @@ export function summarize (html: string, keyword: string): string {
   $('input[id]').each(function () {
     resp += $.html(this)
   })
+  $('img').each(function () {
+    resp += $.html(this)
+  })
   $('a').each(function () {
     if ($(this).text().toLowerCase().includes(keyword.toLowerCase())) {
       resp += `description: ${$(this).text().trim()}\n href: ${$(this).attr('href')}\n\n`

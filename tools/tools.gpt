@@ -1,3 +1,7 @@
+---
+name: web-browse-toolset
+export: browse-website, click-button, click-link, fill, search, enter-key, get-storage-path
+---
 name: browse-website
 description: browse website. Reuse session id from user inputs if possible.
 args: sessionID: session id for existing open browser. 
@@ -41,7 +45,7 @@ args: action: Must provide `fill` as action.
 
 ---
 name: search
-description: search current page and find elements based on keyword.
+description: search and find elements based on keyword in the current page.
 args: sessionID: session id for existing open browser.
 args: storagePath: the storage path to cookies and userdata.
 args: keyword: the keyword to search elements

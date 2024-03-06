@@ -1,4 +1,4 @@
-Tools: browse-website from ../tools/tools.gpt, search from ../tools/tools.gpt, click-link from ../tools/tools.gpt, click-button from ../tools/tools.gpt, fill from ../tools/tools.gpt, get-storage-path from ../tools/tools.gpt, enter-key from ../tools/tools.gpt
+Tools: web-browse-toolset from ../tools/tools.gpt
 
 Reuse existing browser userdata and session.
 Perform each step one by one, don't move on to the next step until current step is done.

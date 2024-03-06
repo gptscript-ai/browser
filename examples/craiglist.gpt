@@ -1,0 +1,7 @@
+Tools: web-browse-toolset from ../tools/tools.gpt
+
+Perform each step one by one, don't move on to the next step until current step is done.
+
+1. Browse website. https://phoenix.craigslist.org/search/cta?query=4runner
+2. Search for the links for cars that are made from 2018 to 2023. Search separately.
+3. Give me a summary the first ten links you found.
