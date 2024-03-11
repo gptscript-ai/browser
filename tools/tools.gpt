@@ -1,6 +1,6 @@
----
 name: web-browse-toolset
 export: browse-website, click-button, click-link, fill, search, enter-key, get-storage-path
+
 ---
 name: browse-website
 description: browse website. Reuse session id from user inputs if possible.
@@ -10,8 +10,9 @@ args: website: the website url to browse. The url should have https protocol pre
 args: print: whether to print output. Provide true if asked for summarizing content.
 args: action: Must provide `browse` as action.
 args: headless: Whether to launch actual browsr. Provide true if it is specifically asked to not launch a browser. Alse provide false.
+tools: service
 
-#!http://localhost:9888
+#!http://service.daemon.gpt.local
 
 ---
 name: click-button
@@ -20,8 +21,9 @@ args: sessionID: session id for existing open browser.
 args: name: the button name
 args: exact: whether to do an exact match
 args: action: Must provide `click-button` as action.
+tools: service
 
-#!http://localhost:9888
+#!http://service.daemon.gpt.local
 
 ---
 name: click-link
@@ -29,8 +31,9 @@ description: Click links on elements from website. Use `browse-website` tool wit
 args: sessionID: session id for existing open browser.
 args: link: the link to click
 args: action: Must provide `click-link` as action.
+tools: service
 
-#!http://localhost:9888
+#!http://service.daemon.gpt.local
 
 ---
 name: fill
@@ -40,8 +43,9 @@ args: id: the id of the element to fill
 args: content: content to fill in
 args: sessionID: session id for existing open browser.
 args: action: Must provide `fill` as action.
+tools: service
 
-#!http://localhost:9888
+#!http://service.daemon.gpt.local
 
 ---
 name: search
@@ -50,16 +54,23 @@ args: sessionID: session id for existing open browser.
 args: storagePath: the storage path to cookies and userdata.
 args: keyword: the keyword to search elements
 args: action: Must provide `search` as action.
+tools: service
 
-#!http://localhost:9888
+#!http://service.daemon.gpt.local
 
 ---
 name: enter-key
 description: Only invoke when user specifically ask to press certain keyboard input to the current page. Provide keyboard input into current page based on user instruction. 
 args: input: the keyboard input.
 args: action: must provide `enter` as action.
+tools: service
 
-#!http://localhost:9888
+#!http://service.daemon.gpt.local
+
+---
+name: service
+
+#!sys.daemon /usr/bin/env npm run server
 
 ---
 name: get-storage-path
@@ -77,5 +88,3 @@ case "$OS" in
 esac
 
 echo "$dir"
-
-

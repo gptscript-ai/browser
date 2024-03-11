@@ -9,10 +9,16 @@ import { enter } from './enter'
 
 async function main (): Promise<void> {
   const app = express()
-  const port = 9888
+  // Get 9888 from the environment variable or use 9888 if it is not defined
+  const port = process.env.PORT || 9888
   app.use(bodyParser.json())
 
   const contextMap: Record<string, BrowserContext> = {}
+
+  // gptscript requires "GET /" to return 200 status code
+  app.get('/', (req: Request, res: Response) => {
+    res.send('OK')
+  })
 
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
   app.post('/', async (req: Request, res: Response) => {
@@ -62,6 +68,14 @@ async function main (): Promise<void> {
     } else {
       res.send('Invalid action')
     }
+  })
+
+  // stdin is used as a keep-alive mechanism. When the parent process dies the stdin will be closed and this process
+  // will exit.
+  process.stdin.resume()
+  process.stdin.on('close', () => {
+    console.log('Closing the server')
+    process.exit(0)
   })
 
   // Start the server
