@@ -1,4 +1,5 @@
 export: browse-website, click-button, click-link, fill, search, enter-key, get-storage-path
+description: a toolset that can be used to browse and navigate websites
 
 ---
 name: browse-website
