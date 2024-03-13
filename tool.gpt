@@ -1,5 +1,5 @@
 export: browse-website, click-button, click-link, fill, search, enter-key, get-storage-path
-description: a toolset that can be used to browse and navigate websites
+description: A toolset that can be used to browse and navigate websites. This tool is capable of following links, filling out forms, clicking buttons, and other basic web browsing functionality. It can also reuse your existing browser session (allowing you to navigate to websites that you manually logged into) if you add the following to your prompt: "Reuse existing browser userdata and session."
 
 ---
 name: browse-website
