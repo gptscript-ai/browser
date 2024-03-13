@@ -25,8 +25,8 @@ export async function browse (context: BrowserContext, website: string, sessionI
     page = pages[pages.length - 1]
   } else {
     page = await context.newPage()
-    await page.goto(website)
   }
+  await page.goto(website)
   await delay(1000)
   let resp: string = ''
   if (print) {

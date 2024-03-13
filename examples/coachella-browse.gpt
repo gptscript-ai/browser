@@ -1,6 +1,6 @@
-Tools: web-browse-toolset from ../tools/tools.gpt
+Tools: ../tools.gpt
 
 Perform each step one by one, don't move on to the next step until current step is done.
 
 1. Browse coachella.com.
-2. Search current page and find tickets and passes info from website, and browse and print the content and give me a summary.
+2. Search current page and find passes information from website, and browse and print the content and give me a summary.

@@ -1,4 +1,4 @@
-Tools: web-browse-toolset from ../tools/tools.gpt
+Tools: ../tools.gpt
 
 Reuse existing browser userdata and session.
 
