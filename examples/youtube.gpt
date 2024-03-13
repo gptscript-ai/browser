@@ -1,4 +1,4 @@
-Tools: ../tool.gpt
+Tools: github.com/gptscript-ai/browser
 
 Only invoke when user asked to press certain keys.
 Perform each step one by one, don't move on to the next step until current step is done.

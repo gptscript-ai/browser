@@ -1,4 +1,4 @@
-Tools: ../tool.gpt
+Tools: github.com/gptscript-ai/browser
 
 Reuse existing browser userdata and session.
 
