@@ -69,7 +69,7 @@ tools: service
 ---
 name: service
 
-#!sys.daemon /usr/bin/env npm run server
+#!sys.daemon /usr/bin/env npm --prefix ${GPTSCRIPT_TOOL_DIR} run server
 
 ---
 name: get-storage-path
