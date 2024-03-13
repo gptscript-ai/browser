@@ -1,4 +1,4 @@
-Tools: ../tools.gpt
+Tools: ../tool.gpt
 
 Reuse existing browser userdata and session.
 Perform each step one by one, don't move on to the next step until current step is done.
