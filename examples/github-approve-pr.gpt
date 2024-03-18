@@ -1,7 +1,5 @@
 Tools: github.com/gptscript-ai/browser
 
-Perform each step one by one, don't move on to the next step until current step is done.
-
 Reuse existing browser userdata and session.
 
 1. Browse https://github.com/gptscript-ai/gptscript/pull/83.

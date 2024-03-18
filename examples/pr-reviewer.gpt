@@ -1,6 +1,5 @@
 Tools: github.com/gptscript-ai/browser
 
 Reuse existing browser userdata and session.
-Perform each step one by one, don't move on to the next step until current step is done.
 
 1. Browse https://github.com/gptscript-ai/gptscript/pull/107/files and give me a summary, and give me suggestion whether I can approve it.
