@@ -1,0 +1,19 @@
+Tools: github.com/gptscript-ai/browser
+
+Don't click `Next` button until the form fill action is completed.
+Reuse existing browser userdata and session.
+
+1. Go to https://sales.geico.com/?POL_ratedZip5=85296&lob=auto&soa=04978.
+2. Search and find the id of birthday form in current page, then fill `01/01/1999` as birthday. After filling out the form, click `Next` button.
+3. Search and find the id of first name and last name, and fill it out with James and Hill. After filling out the form, click `Next` button.
+4. Search and find the id of address, and fill it with `2836 E Boot Track Trl`. After filling out the form, click `Next` button.
+5. Search and find the radio button that enrolls in DriveEasy(it should have a label `Yes, enroll in DriveEasy` next to it), and check on the radio box. After that, click `Next` button.
+6. Search and find the "yes" radio button and check on it to confirm you have vin number. After filling out the form, click `Next` button.
+7. Search and fine `vin number` box. Fill `5UXKT0C59GHDFJHGF` as the vin number.  After filling out the form, click `Next` button.
+8. Search and find the "yes" radio button and check on it to confirm you have anti-lock brakes. After filling out the form, click `Next` button.
+9. Search and find the `Owned` radio button and check on it to confirm you owned this vehicle. After filling out the form, click `Next` button.
+10. Search and find the `Not business` radio button and check on it to confirm you are using it for non-business purpose. After filling out the form, click `Next` button.
+11. Click on `Next` button to confirm.
+12. Search and find Gender select dropdown, and select Male. Click on `Next` button to confirm.
+13. Click on `Next` to confirm.
+

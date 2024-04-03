@@ -1,15 +1,25 @@
-export: browse-website, click-button, click-link, fill, search, enter-key, get-storage-path
+export: browse-website, login, click-button, click-link, fill, search, enter-key, check, select, inspect, get-storage-path
 description: A toolset that can be used to browse and navigate websites. This tool is capable of following links, filling out forms, clicking buttons, and other basic web browsing functionality. It can also reuse your existing browser session (allowing you to navigate to websites that you manually logged into) if you add the following to your prompt: "Reuse existing browser userdata and session."
 
 ---
 name: browse-website
 description: browse website. Reuse session id from user inputs if possible.
-args: sessionID: session id for existing open browser. 
 args: storagePath: the storage path to cookies and userdata.
 args: website: the website url to browse. The url should have https protocol prepend.
 args: print: whether to print output. Provide true if asked for summarizing content.
 args: action: Must provide `browse` as action.
+args: sessionID: id of an existing session. 
 args: headless: Whether to launch actual browsr. Provide true if it is specifically asked to not launch a browser. Alse provide false.
+tools: service
+
+#!http://service.daemon.gptscript.local
+
+---
+name: login
+description: login a website.
+args: website: the website url to browse. The url should have https protocol prepend.
+args: action: Must provide `login` as action.
+args: sessionID: id of an existing session. 
 tools: service
 
 #!http://service.daemon.gptscript.local
@@ -17,7 +27,7 @@ tools: service
 ---
 name: click-button
 description: Click buttons from website. It should call browse tool to browse current page first and use keyword to figure out the button name.
-args: sessionID: session id for existing open browser.
+args: sessionID: id of an existing session. 
 args: name: the button name
 args: exact: whether to do an exact match
 args: action: Must provide `click-button` as action.
@@ -28,7 +38,7 @@ tools: service
 ---
 name: click-link
 description: Click links on elements from website. Use `browse-website` tool with keyword to figure out the link.
-args: sessionID: session id for existing open browser.
+args: sessionID: id of an existing session. 
 args: link: the link to click
 args: action: Must provide `click-link` as action.
 tools: service
@@ -41,7 +51,7 @@ description: fill text content into website.
 args: name: the name of the element to fill
 args: id: the id of the element to fill
 args: content: content to fill in
-args: sessionID: session id for existing open browser.
+args: sessionID: id of an existing session. 
 args: action: Must provide `fill` as action.
 tools: service
 
@@ -50,9 +60,9 @@ tools: service
 ---
 name: search
 description: search and find elements based on keyword in the current page.
-args: sessionID: session id for existing open browser.
+args: sessionID: id of an existing session. 
 args: storagePath: the storage path to cookies and userdata.
-args: keyword: the keyword to search elements
+args: keywords: a list of keywords to search elements, separated by comma
 args: action: Must provide `search` as action.
 tools: service
 
@@ -63,6 +73,37 @@ name: enter-key
 description: Only invoke when user specifically ask to press certain keyboard input to the current page. Provide keyboard input into current page based on user instruction. 
 args: input: the keyboard input.
 args: action: must provide `enter` as action.
+args: sessionID: id of an existing session. 
+tools: service
+
+#!http://service.daemon.gptscript.local
+
+---
+name: check
+description: check radio button input
+args: id: the id of the element to fill
+args: sessionID: id of an existing session. 
+args: action: must provide `check` as action.
+tools: service
+
+#!http://service.daemon.gptscript.local
+
+---
+name: select
+description: select input from dropdown
+args: id: the id of the dropdown item
+args: sessionID: id of an existing session. 
+args: action: must provide `select` as action.
+args: option: option to choose from dropdown
+tools: service
+
+#!http://service.daemon.gptscript.local
+
+---
+name: inspect
+description: Inspect the current page for element layout data
+args: sessionID: id of an existing session. 
+args: action: must provide `inspect` as action.
 tools: service
 
 #!http://service.daemon.gptscript.local
