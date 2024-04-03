@@ -40,6 +40,26 @@ Reuse existing browser userdata and session.
 
 This action will terminate any existing Chrome processes and launch a new browser session with your saved data.
 
+To use a specific session id and login to that session, first try logging in with the session id:
+
+```
+Tools: github.com/gptscript-ai/browser
+
+Use sesssion `linkedin`.
+
+Login to `www.linkedin.com`.
+```
+
+Once you logged in, close the browser tab. If you run other gptscripts with the same session id, it should already be logged in.
+
+```
+Tools: github.com/gptscript-ai/browser
+
+Use sesssion id `linkedin`.
+
+Go to `https://www.linkedin.com/in/ibuildthecloud/`, give me a list of company darren has worked recently and how long he has worked, what did he do for each job.
+```
+
 ## How it works
 
 The tool operates as an HTTP server running in the background, managing browser actions and sessions.
