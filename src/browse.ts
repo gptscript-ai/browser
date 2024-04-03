@@ -2,7 +2,7 @@ import { type BrowserContext, type Page } from 'playwright'
 import * as cheerio from 'cheerio'
 import { delay } from './delay'
 
-export async function search (context: BrowserContext, website: string, sessionID: string, keyword: string): Promise<string> {
+export async function search (context: BrowserContext, website: string, sessionID: string, keywords: string[]): Promise<string> {
   let page: Page
   const pages = context.pages()
   if (pages.length > 1) {
@@ -13,7 +13,7 @@ export async function search (context: BrowserContext, website: string, sessionI
   }
   await delay(1000)
   const html = await page.content()
-  let resp = summarize(html, keyword)
+  let resp = summarize(html, keywords)
   resp += `sessionID: ${sessionID}\n`
   return resp
 }
@@ -39,11 +39,13 @@ export async function browse (context: BrowserContext, website: string, sessionI
       resp += $(this).text()
     })
   }
+  const html = await page.content()
+  resp += summarize(html, [])
   resp += `sessionID: ${sessionID}\n`
   return resp
 }
 
-export function summarize (html: string, keyword: string): string {
+export function summarize (html: string, keywords: string[]): string {
   const $ = cheerio.load(html)
   let resp: string = ''
   // For search, we need to find all the input and textarea elements and figure that out
@@ -56,14 +58,24 @@ export function summarize (html: string, keyword: string): string {
   $('img').each(function () {
     resp += $.html(this)
   })
+  $('label').each(function () {
+    resp += $.html(this)
+  })
+  $('select').each(function () {
+    resp += $.html(this)
+  })
   $('a').each(function () {
-    if ($(this).text().toLowerCase().includes(keyword.toLowerCase())) {
-      resp += `description: ${$(this).text().trim()}\n href: ${$(this).attr('href')}\n\n`
+    for (const keyword of keywords) {
+      if ($(this).text().toLowerCase().includes(keyword.toLowerCase())) {
+        resp += `description: ${$(this).text().trim()}\n href: ${$(this).attr('href')}\n\n`
+      }
     }
   })
   $('button').each(function () {
-    if ($(this).text().toLowerCase().includes(keyword.toLowerCase())) {
-      resp += `description: ${$(this).text().trim()}\n`
+    for (const keyword of keywords) {
+      if ($(this).text().toLowerCase().includes(keyword.toLowerCase())) {
+        resp += `description: ${$(this).text().trim()}\n`
+      }
     }
   })
   return resp

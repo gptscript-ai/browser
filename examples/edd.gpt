@@ -1,0 +1,13 @@
+Tools: ../tool.gpt
+
+1. Go to https://eddservices.edd.ca.gov/acctservices/AccountManagement/AccountServlet?Command=NEW_SIGN_UP
+2. Search and find the following input: Username, Password, First Name, Last Name, SSN, Email and Phone Number.
+3. Fill form using the following data:
+
+Username: foo
+Password: bar
+First Name: James
+Last Name: Hill
+SSN: 9999
+Email: foo@bar.com
+Phone: 999-999-9999

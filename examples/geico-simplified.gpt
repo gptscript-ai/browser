@@ -1,0 +1,27 @@
+Tools: github.com/gptscript-ai/browser
+
+First, go to https://sales.geico.com/?POL_ratedZip5=85296&lob=auto&soa=04978a and inspect the current page.
+
+Repeat the following process until you see a page with forms to receive quote:
+
+Inspect the current page, and fill any form, check any box and select options as you can using the following json data. After that, click on "Next" button.
+
+```
+{
+  "birthday": "01/01/1999",
+  "FirstName": "James",
+  "LastName": "Hill",
+  "address": "2836 E Boot Track Trl",
+  "driveEasy": "yes",
+  "hasVin": "yes",
+  "vin": "5UXKT0C59GHDFJHGF",
+  "hasAntiLock": "yes",
+  "Owned": "yes",
+  "Business": "no",
+  "Gender": "male",
+  "Insurance": "yes",
+  "YearsInsured": "5",
+  "InsuranceLast30Days": "yes",
+  "bodilyInjuryLimits": "$15000/$30000",
+}
+```
