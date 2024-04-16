@@ -6,7 +6,7 @@ export async function login (context: BrowserContext, website: string, sessionID
 
   // Listen for the 'close' event on the browser
   page.on('close', () => {
-    void context.close()
+    context.close().then().catch((err) => { console.log(err) })
   })
   await page.goto(website)
   await delay(50000)

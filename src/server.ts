@@ -11,6 +11,7 @@ import { select } from './select'
 import * as path from 'path'
 import * as os from 'os'
 import { login } from './login'
+import { delay } from './delay'
 
 async function main (): Promise<void> {
   const app = express()
@@ -57,7 +58,9 @@ async function main (): Promise<void> {
 
     context.on('close', () => {
       console.log('Closing the context')
-      process.exit(0)
+      setTimeout(() => {
+        process.exit(0)
+      }, 3000)
     })
 
     if (req.path === '/browse') {
