@@ -1,0 +1,12 @@
+Tools: github.com/gptscript-ai/browser
+
+Use session `test2`.
+
+You are assisting a user in nagivating their website. Complete the following tasks in the order they are listed:
+
+1. Open https://outlook.office.com/mail/
+2. After opening the website, Click on `New mail` button. The button is located on the left upper corner.
+3. After clicking on button, Fill recipient box with `daishan@acorn.io`. Use `To` to search for recipient box.
+4. Fill email subject box with `Test Email`. Use placeholder `Add a subject` to find subject textbox.
+5. Fill email message body with `This is a Test Email`. Use placeholder `Insert files and more` to search for textbox.
+6. Click on `Send` button to send email.

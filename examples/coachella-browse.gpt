@@ -1,4 +1,5 @@
 Tools: github.com/gptscript-ai/browser
 
 1. Browse coachella.com.
-2. Search current page and find passes information from website, and browse and print the content and give me a summary.
+2. Click on link that go to pass information.
+3. Give me a summary about what's the ticket price.

@@ -1,4 +1,4 @@
-Tools: ../tool.gpt
+Tools: github.com/gptscript-ai/browser
 
 1. Go to https://eddservices.edd.ca.gov/acctservices/AccountManagement/AccountServlet?Command=NEW_SIGN_UP
 2. Search and find the following input: Username, Password, First Name, Last Name, SSN, Email and Phone Number.

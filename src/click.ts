@@ -1,25 +1,47 @@
 import { type BrowserContext } from 'playwright'
-import { type Response } from 'express'
 import { delay } from './delay'
-import { search } from './browse'
+import { getText, inspect } from './browse'
 
-export async function clickLink (context: BrowserContext, resp: Response, link: string): Promise<void> {
-  const pages = context.pages()
-  const page = pages[pages.length - 1]
-  const url = new URL(link, page.url())
-  await page.goto(url.href)
-  await delay(1000)
-  resp.end()
-}
+export async function click (context: BrowserContext, userInput: string, keywords: string[]): Promise<void> {
+  const locators = await inspect(context, userInput, 'click', keywords)
+  console.log(locators)
+  let done = false
+  for (const locator of locators) {
+    try {
+      const pages = context.pages()
+      const page = pages[pages.length - 1]
+      const elements = await page.locator(`${locator}`).all()
+      if (elements.length === 0) {
+        console.log(`No elements found for locator: ${locator}`)
+        continue
+      }
+      for (const element of elements) {
+        const innerText = await getText(element)
 
-export async function clickButton (context: BrowserContext, resp: Response, name: string, exact: boolean, sessionID: string): Promise<void> {
-  const pages = context.pages()
-  const page = pages[pages.length - 1]
-  await page.getByRole('button', { name, exact }).click()
-  try {
-    await page.waitForNavigation({ waitUntil: 'load' })
-  } catch (e) {
-    resp.send(await search(context, '', sessionID, []))
+        for (const keyword of keywords) {
+          if (innerText.toLowerCase().includes(keyword.toLowerCase())) {
+            await element.scrollIntoViewIfNeeded()
+            const boundingBox = await element.boundingBox()
+
+            if (boundingBox != null) {
+              await page.mouse.click(boundingBox.x, boundingBox.y)
+              await delay(5000)
+              done = true
+              break
+            }
+          }
+        }
+
+        if (done) {
+          break
+        }
+      }
+    } catch (e) {
+      console.log(e)
+    }
+
+    if (done) {
+      break
+    }
   }
-  resp.end()
 }

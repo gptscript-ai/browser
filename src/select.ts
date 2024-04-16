@@ -1,9 +1,15 @@
 import { type BrowserContext } from 'playwright'
-import { type Response } from 'express'
+import { inspect } from './browse'
 
-export async function select (context: BrowserContext, resp: Response, id: string, option: string): Promise<void> {
+export async function select (context: BrowserContext, userInput: string, option: string): Promise<void> {
   const pages = context.pages()
   const page = pages[pages.length - 1]
-  await page.locator(`#${id}`).selectOption(`${option}`)
-  resp.end()
+  const locators = await inspect(context, 'select', userInput)
+  for (const locator of locators) {
+    try {
+      await page.selectOption(`${locator}`, option, { timeout: 5000 })
+      break
+    } catch (e) {
+    }
+  }
 }

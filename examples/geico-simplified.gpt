@@ -1,10 +1,13 @@
 Tools: github.com/gptscript-ai/browser
 
-First, go to https://sales.geico.com/?POL_ratedZip5=85296&lob=auto&soa=04978a and inspect the current page.
+Reuse existing browser userdata and session.
 
-Repeat the following process until you see a page with forms to receive quote:
+First, go to https://sales.geico.com/?POL_ratedZip5=85296&lob=auto&soa=04978a.
 
-Inspect the current page, and fill any form, check any box and select options as you can using the following json data. After that, click on "Next" button.
+Repeat the following steps in order:
+
+1. Fill any form, check any box and select options as you can using the following json data. 
+2. After data have been filled, click on "Next" button.
 
 ```
 {

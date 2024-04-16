@@ -2,13 +2,12 @@ import express, { type Request, type Response } from 'express'
 import bodyParser from 'body-parser'
 import { type BrowserContext } from 'playwright'
 import { chromium } from 'playwright'
-import { search, browse } from './browse'
-import { clickButton, clickLink } from './click'
+import { browse } from './browse'
+import { click } from './click'
 import { fill } from './fill'
 import { enter } from './enter'
 import { check } from './check'
 import { select } from './select'
-import { promises as fs } from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import { login } from './login'
@@ -17,6 +16,7 @@ async function main (): Promise<void> {
   const app = express()
   // Get 9888 from the environment variable or use 9888 if it is not defined
   const port = process.env.PORT || 9888
+  delete (process.env.GPTSCRIPT_INPUT)
   app.use(bodyParser.json())
 
   const contextMap: Record<string, BrowserContext> = {}
@@ -27,17 +27,17 @@ async function main (): Promise<void> {
   })
 
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
-  app.post('/', async (req: Request, res: Response) => {
+  app.post('/*', async (req: Request, res: Response) => {
     const data = req.body
     console.log(data)
-    const action = data.action
     const website: string = data.website ?? ''
-    const keywords: string[] = (data.keyword ?? '').split(',')
+    const userInput: string = data.userInput ?? ''
+    const keywords: string[] = (data.keywords ?? '').split(',')
     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     const sessionID: string = data.sessionID || new Date().getTime().toString()
     const cacheDir = getGlobalCacheDir(sessionID)
     const storagePath: string = data.storagePath ?? cacheDir
-    console.log(`Using storage path: ${storagePath}`)
+    console.log(`Storage path: ${storagePath}`)
 
     let context: BrowserContext
     if (contextMap[sessionID] !== undefined) {
@@ -54,42 +54,35 @@ async function main (): Promise<void> {
         })
       contextMap[sessionID] = context
     }
-    if (action === 'browse') {
+
+    context.on('close', () => {
+      console.log('Closing the context')
+      process.exit(0)
+    })
+
+    if (req.path === '/browse') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      res.send(await browse(context, website, sessionID, data.print === 'true'))
-    } else if (action === 'search') {
-      res.send(await search(context, website, sessionID, keywords))
-    } else if (action === 'inspect') {
-      res.send(await search(context, website, sessionID, []))
-    } else if (action === 'click-link') {
+      res.send(await browse(context, website, sessionID, false))
+    } else if (req.path === '/summarize') {
+      res.send(await browse(context, website, sessionID, true))
+    } else if (req.path === '/click') {
+      await click(context, userInput, keywords.map((keyword) => keyword.trim()))
+    } else if (req.path === '/fill') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await clickLink(context, res, data.link ?? '')
-      res.end()
-    } else if (action === 'click-button') {
+      await fill(context, userInput, data.content ?? '', keywords)
+    } else if (req.path === '/enter') {
+      await enter(context, data.input as string)
+    } else if (req.path === '/check') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await clickButton(context, res, data.name ?? '', data.exact === 'true', sessionID)
-      res.end()
-    } else if (action === 'fill') {
+      await check(context, userInput)
+    } else if (req.path === '/select') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await fill(context, website, data.id ?? '', data.name ?? '', data.content ?? '')
-      res.end()
-    } else if (action === 'enter') {
-      await enter(context, res, data.input as string)
-    } else if (action === 'check') {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await check(context, res, data.id ?? '')
-    } else if (action === 'select') {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await select(context, res, data.id ?? '', data.option ?? '')
-    } else if (action === 'login') {
+      await select(context, userInput, data.option ?? '')
+    } else if (req.path === '/login') {
       await login(context, website, sessionID)
-    } else {
-      res.send('Invalid action')
     }
 
-    await fs.mkdir(sessionID, { recursive: true })
-    const pages = context.pages()
-    await pages[pages.length - 1].screenshot({ path: path.join(sessionID, `${Math.floor(Date.now() / 1000)}.png`) })
+    res.end()
   })
 
   // stdin is used as a keep-alive mechanism. When the parent process dies the stdin will be closed and this process
