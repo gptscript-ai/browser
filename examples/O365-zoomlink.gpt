@@ -1,10 +1,8 @@
 Tool: github.com/gptscript-ai/browser
 
-Use session test2.
-
-Reuse existing browser userdata and session.
+Use session id `session3`.
 
 Do the following:
-1. Open outlook.office.com and inspect the current page.
-2. Click the button with the text that includes `Zoom` and `Cloud Recording` and inspect the page.
+1. Open outlook.office.com.
+2. Click the button with the text that includes `Zoom` and `Cloud Recording`.
 3. Extract the zoom.us link and passcode and print it.
