@@ -15,9 +15,9 @@ export async function browse (context: BrowserContext, website: string, sessionI
   }
   if (website !== '') {
     await page.goto(website)
+    await delay(5000)
   }
 
-  await delay(1000)
   let resp: string = ''
   if (print) {
     const html = await page.content()
@@ -39,14 +39,14 @@ export async function inspect (context: BrowserContext, userInput: string, actio
     instructions: `you are an expert in understanding web pages, playwright library and HTML elements and can help me find the information I need.
      You will be given html content and asked to find specific elements or information. 
      Based html data provided below, return the locator that can be used to locate the element using playwright library page.locator(). 
-     When asked about filling data, find all the element like input, form, textarea. return a list of possible locators you can find and concatnate by #.
-     When asked about clicking button, find all the button elements. If you can't find button, find div instead. return a list of possible locators you can find and concatnate by #.
+     When asked about filling data, find all the element like input, form, textarea. return the most accurate locator you can find.
+     When asked about clicking button, only find all the button elements. If you can't find button, find div instead. return the most accurate locator you can find.
      When asked about clicking links, Only find link that are relevant to what user is looking for. Return exact one link that is the best match. 
-     Use id or text based locator first. Validate the locator before returning.
+     Use id or text based locator first. Validate the locator before returning. Don't escape the locator with \\ unless it is necessary. Return exact one locator that is the best match
      Provided data: '${elementData}'. 
      UserInput: ${userInput}
      
-     Return the list of locators separated by #. Don't quote the output. De-duplicate the output.`
+     Don't quote the output.`
   })
 
   const output = (await exec(tool, {})).replace('\n', '').trim()
@@ -59,7 +59,7 @@ export async function inspect (context: BrowserContext, userInput: string, actio
     })
     return await inspect(context, userInput, action, keywords)
   }
-  return output.split('#')
+  return [output]
 }
 
 export async function summarize (page: Page, keywords: string[], action: string): Promise<string> {
@@ -101,6 +101,18 @@ export async function summarize (page: Page, keywords: string[], action: string)
     })
   }
 
+  if (action === 'check') {
+    $('input[type="checkbox"]').each(function () {
+      // return parent element for more context
+      const html = $(this).parent().html()?.toString() ?? ''
+      for (const keyword of keywords) {
+        if (html.toLowerCase().includes(keyword.toLowerCase())) {
+          resp += html
+        }
+      }
+    })
+  }
+
   if (action === 'select') {
     $('select').each(function () {
       resp += $.html(this)
@@ -110,7 +122,7 @@ export async function summarize (page: Page, keywords: string[], action: string)
   if (action === 'click') {
     $('a').each(function () {
       for (const keyword of keywords) {
-        if ($(this).text().toLowerCase().includes(keyword.toLowerCase())) {
+        if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
           resp += $.html(this)
         }
       }

@@ -5,7 +5,7 @@ description: A toolset that can be used to browse and navigate websites. This to
 name: browse
 description: browse website. Reuse session id from user inputs if possible.
 args: website: the website url to browse. The url should have https protocol prepend.
-args: sessionID: id of an existing session.
+args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
 args: headless: Whether to launch actual browsr. Provide true if it is specifically asked to not launch a browser. Alse provide false.
 tools: service
 
@@ -14,7 +14,7 @@ tools: service
 ---
 name: summarize
 description: summarize the current webpage. Reuse session id from user inputs if possible. Only use this tool if user want to know more information about the current website.
-args: sessionID: id of an existing session.
+args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
 args: headless: Whether to launch actual browsr. Provide true if it is specifically asked to not launch a browser. Alse provide false.
 tools: service
 
@@ -24,7 +24,7 @@ tools: service
 name: login
 description: login a website.
 args: website: the website url to browse. The url should have https protocol prepend.
-args: sessionID: id of an existing session. 
+args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
 tools: service
 
 #!http://service.daemon.gptscript.local/login
@@ -32,7 +32,7 @@ tools: service
 ---
 name: click
 description: Click buttons from website.
-args: sessionID: id of an existing session. 
+args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
 args: userInput: the element description to look for. This is a required input parameter for the API function, which must be explicitly provided by ChatGPT in the request. Failure to include this parameter, or providing an invalid value, will result in an error or failure in the execution of the API call.
 args: keywords: A list of keywords about the element, separated by comma. This is a required input parameter for the API function, which must be explicitly provided by ChatGPT in the request. Failure to include this parameter, or providing an invalid value, will result in an error or failure in the execution of the API call.
 tools: service
@@ -44,7 +44,7 @@ name: fill
 description: fill text content into website.
 args: userInput: the element description to look for
 args: content: content to fill in
-args: sessionID: id of an existing session. 
+args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
 args: keywords: A list of keywords about the element, separated by comma. This is a required input parameter for the API function, which must be explicitly provided by ChatGPT in the request. Failure to include this parameter, or providing an invalid value, will result in an error or failure in the execution of the API call.
 tools: service
 
@@ -54,7 +54,7 @@ tools: service
 name: enter
 description: Only invoke when user specifically ask to press certain keyboard input to the current page. Provide keyboard input into current page based on user instruction. 
 args: input: the keyboard input.
-args: sessionID: id of an existing session. 
+args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
 tools: service
 
 #!http://service.daemon.gptscript.local/enter
@@ -62,8 +62,9 @@ tools: service
 ---
 name: check
 description: check radio button input
-args: userInput: the element description to look for
-args: sessionID: id of an existing session. 
+args: userInput: the instruction to find the element based on user description
+args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
+args: keywords: A list of keywords about the element, separated by comma. This is a required input parameter for the API function, which must be explicitly provided by ChatGPT in the request. Failure to include this parameter, or providing an invalid value, will result in an error or failure in the execution of the API call.
 tools: service
 
 #!http://service.daemon.gptscript.local/check
@@ -72,7 +73,7 @@ tools: service
 name: select
 description: select input from dropdown
 args: userInput: the element description to look for
-args: sessionID: id of an existing session. 
+args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
 args: option: option to choose from dropdown
 tools: service
 

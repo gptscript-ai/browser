@@ -17,17 +17,27 @@ export async function click (context: BrowserContext, userInput: string, keyword
       }
       for (const element of elements) {
         const innerText = await getText(element)
-
         for (const keyword of keywords) {
           if (innerText.toLowerCase().includes(keyword.toLowerCase())) {
-            await element.scrollIntoViewIfNeeded()
             const boundingBox = await element.boundingBox()
-
             if (boundingBox != null) {
-              await page.mouse.click(boundingBox.x, boundingBox.y)
+              await page.mouse.click(boundingBox.x + boundingBox.width / 2, boundingBox.y + boundingBox.height / 2)
               await delay(5000)
               done = true
               break
+            } else {
+              let parent = element.locator('..')
+              while (true) {
+                const boundingBox = await parent.boundingBox()
+                if (boundingBox != null) {
+                  console.log(boundingBox.x, boundingBox.y)
+                  await page.mouse.click(boundingBox.x + boundingBox.width / 2, boundingBox.y + boundingBox.height / 2)
+                  await delay(5000)
+                  done = true
+                  break
+                }
+                parent = parent.locator('..')
+              }
             }
           }
         }

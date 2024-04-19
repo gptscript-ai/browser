@@ -11,7 +11,7 @@ import { select } from './select'
 import * as path from 'path'
 import * as os from 'os'
 import { login } from './login'
-import { delay } from './delay'
+import * as fs from 'fs'
 
 async function main (): Promise<void> {
   const app = express()
@@ -35,10 +35,20 @@ async function main (): Promise<void> {
     const userInput: string = data.userInput ?? ''
     const keywords: string[] = (data.keywords ?? '').split(',')
     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-    const sessionID: string = data.sessionID || new Date().getTime().toString()
+    let sessionID = ''
+    if (data.sessionID !== undefined) {
+      sessionID = data.sessionID
+    } else {
+      const sessionFile = path.join(os.homedir(), '/.gptscript/session')
+      if (!fs.existsSync(sessionFile)) {
+        fs.mkdirSync(path.dirname(sessionFile), { recursive: true })
+        fs.writeFileSync(sessionFile, new Date().getTime().toString())
+      }
+      sessionID = fs.readFileSync(sessionFile, 'utf8').toString()
+    }
+
     const cacheDir = getGlobalCacheDir(sessionID)
     const storagePath: string = data.storagePath ?? cacheDir
-    console.log(`Storage path: ${storagePath}`)
 
     let context: BrowserContext
     if (contextMap[sessionID] !== undefined) {
@@ -77,7 +87,7 @@ async function main (): Promise<void> {
       await enter(context, data.input as string)
     } else if (req.path === '/check') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await check(context, userInput)
+      await check(context, userInput, keywords)
     } else if (req.path === '/select') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       await select(context, userInput, data.option ?? '')
