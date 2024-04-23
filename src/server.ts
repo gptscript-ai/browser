@@ -57,10 +57,11 @@ async function main (): Promise<void> {
       context = await chromium.launchPersistentContext(
         storagePath,
         {
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
           headless: data.headless === 'true',
           viewport: null,
           channel: 'chrome',
-          args: ['--start-maximized'],
+          args: ['--start-maximized', '--disable-blink-features=AutomationControlled'],
           ignoreDefaultArgs: ['--enable-automation', '--use-mock-keychain']
         })
       contextMap[sessionID] = context

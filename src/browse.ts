@@ -34,7 +34,20 @@ export async function inspect (context: BrowserContext, userInput: string, actio
   const pages = context.pages()
   const page = pages[pages.length - 1]
 
-  const elementData = await summarize(page, keywords ?? [], action)
+  let elementData = await summarize(page, keywords ?? [], action)
+  while (elementData === '') {
+    console.log('Scrolling to the bottom of the page')
+    await page.evaluate(() => {
+      const allElements = Array.from(document.querySelectorAll('div'))
+      const scrollables = allElements.filter(e => ((e.getAttribute('style')?.includes('overflow: auto') ?? false) || (e.getAttribute('style')?.includes('overflow: scroll') ?? false)))
+      console.log(scrollables.length)
+      if (scrollables.length > 0) {
+        scrollables[0].scrollBy(0, window.innerHeight)
+      }
+    })
+    await delay(2000)
+    elementData = await summarize(page, keywords ?? [], action)
+  }
   const tool = new Tool({
     instructions: `you are an expert in understanding web pages, playwright library and HTML elements and can help me find the information I need.
      You will be given html content and asked to find specific elements or information. 
@@ -51,14 +64,6 @@ export async function inspect (context: BrowserContext, userInput: string, actio
 
   const output = (await exec(tool, {})).replace('\n', '').trim()
 
-  if (output === 'NONE') {
-    // If the user can't find any locator, try to find a scrollable element and scroll to it until we can find the element
-    console.log('Scrolling to the bottom of the page')
-    await page.evaluate(() => {
-      window.scrollBy(0, window.innerHeight) // Horizontal scroll by one full screen width
-    })
-    return await inspect(context, userInput, action, keywords)
-  }
   return [output]
 }
 
@@ -138,6 +143,14 @@ export async function summarize (page: Page, keywords: string[], action: string)
     $('div').each(function () {
       for (const keyword of keywords) {
         if ($(this).children('div').length === 0 && $.html(this).toLowerCase().includes(keyword.toLowerCase())) {
+          resp += $.html(this)
+        }
+      }
+    })
+
+    $('span').each(function () {
+      for (const keyword of keywords) {
+        if ($(this).children.length === 0 && $.html(this).toLowerCase().includes(keyword.toLowerCase())) {
           resp += $.html(this)
         }
       }
