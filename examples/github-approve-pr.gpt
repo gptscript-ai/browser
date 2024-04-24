@@ -1,7 +1,5 @@
 Tools: github.com/gptscript-ai/browser
 
-Reuse existing browser userdata and session.
-
 1. Browse https://github.com/gptscript-ai/gptscript/pull/83.
 2. Search current page and find `Add your review`, then click on it.
 3. Search current page and find `Review changes` button, then click on it.

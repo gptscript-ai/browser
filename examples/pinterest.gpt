@@ -1,7 +1,5 @@
 Tools: github.com/gptscript-ai/browser
 
-Reuse existing browser userdata and session.
-
 1. Browse www.pinterest.com.
 2. Fill search input box with garden ideas.
 3. Press enter.

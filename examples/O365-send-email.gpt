@@ -1,7 +1,5 @@
 Tools: github.com/gptscript-ai/browser
 
-Use session `session3`.
-
 You are assisting a user in nagivating their website. Complete the following tasks in the order they are listed:
 
 1. Open https://outlook.office.com/mail/

@@ -1,0 +1,9 @@
+Tools: github.com/gptscript-ai/browser
+
+You are assisting a user in nagivating their website. Complete the following tasks in the order they are listed:
+
+1. Open https://outlook.office.com/mail/
+2. After opening the website, find email with "Test Email" as subject and select the email.
+3. Click on `Reply` using description: Find the last section that contains text `reply`
+5. Fill email message body with `This is a Test Reply Email`. Use placeholder `Insert files and more` to search for textbox.
+6. Click on `Send` button to send email. 
