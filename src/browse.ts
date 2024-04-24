@@ -22,6 +22,12 @@ export async function browse (context: BrowserContext, website: string, sessionI
   if (print) {
     const html = await page.content()
     const $ = cheerio.load(html)
+    $('script').remove()
+    $('style').remove()
+    $('[style]').removeAttr('style')
+    $('[onclick]').removeAttr('onclick')
+    $('[onload]').removeAttr('onload')
+    $('[onerror]').removeAttr('onerror')
     $('body').each(function () {
       resp += $(this).text()
     })
@@ -35,18 +41,24 @@ export async function inspect (context: BrowserContext, userInput: string, actio
   const page = pages[pages.length - 1]
 
   let elementData = await summarize(page, keywords ?? [], action)
-  while (elementData === '') {
-    console.log('Scrolling to the bottom of the page')
+  // If no data found, try to find the element without keywords first
+  if (elementData === '') {
+    elementData = await summarize(page, [], action)
+  }
+  // Scroll the page to get more data and try to find the element
+  // Retry 60 times also to give user time to sign in if the landing page requires sign in
+  let retry = 0
+  while (elementData === '' && retry < 60) {
     await page.evaluate(() => {
       const allElements = Array.from(document.querySelectorAll('div'))
       const scrollables = allElements.filter(e => ((e.getAttribute('style')?.includes('overflow: auto') ?? false) || (e.getAttribute('style')?.includes('overflow: scroll') ?? false)))
-      console.log(scrollables.length)
       if (scrollables.length > 0) {
         scrollables[0].scrollBy(0, window.innerHeight)
       }
     })
     await delay(2000)
     elementData = await summarize(page, keywords ?? [], action)
+    retry++
   }
   const tool = new Tool({
     instructions: `you are an expert in understanding web pages, playwright library and HTML elements and can help me find the information I need.
@@ -75,24 +87,51 @@ export async function summarize (page: Page, keywords: string[], action: string)
   // For search, we need to find all the input and textarea elements and figure that out
   if (action === 'fill') {
     $('textarea').each(function () {
-      for (const keyword of keywords) {
-        if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-          resp += $.html(this)
+      if (keywords.length !== 0) {
+        for (const keyword of keywords) {
+          if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
+            resp += $.html(this)
+            break
+          }
         }
+      } else {
+        resp += $.html(this)
       }
     })
     $('input[id]').each(function () {
-      for (const keyword of keywords) {
-        if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-          resp += $.html(this)
+      if (keywords.length !== 0) {
+        for (const keyword of keywords) {
+          if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
+            resp += $.html(this)
+            break
+          }
         }
+      } else {
+        resp += $.html(this)
+      }
+    })
+    $('input').each(function () {
+      if (keywords.length !== 0) {
+        for (const keyword of keywords) {
+          if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
+            resp += $.html(this)
+            break
+          }
+        }
+      } else {
+        resp += $.html(this)
       }
     })
     $('form').each(function () {
-      for (const keyword of keywords) {
-        if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-          resp += $.html(this)
+      if (keywords.length !== 0) {
+        for (const keyword of keywords) {
+          if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
+            resp += $.html(this)
+            break
+          }
         }
+      } else {
+        resp += $.html(this)
       }
     })
     $('div').each(function () {
@@ -126,46 +165,57 @@ export async function summarize (page: Page, keywords: string[], action: string)
 
   if (action === 'click') {
     $('a').each(function () {
-      for (const keyword of keywords) {
-        if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-          resp += $.html(this)
+      if (keywords.length !== 0) {
+        for (const keyword of keywords) {
+          if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
+            resp += $.html(this)
+            break
+          }
         }
+      } else {
+        resp += $.html(this)
       }
     })
     $('button').each(function () {
-      for (const keyword of keywords) {
-        if ($(this).text().toLowerCase().includes(keyword.toLowerCase())) {
-          resp += $.html(this)
+      if (keywords.length !== 0) {
+        for (const keyword of keywords) {
+          if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
+            resp += $.html(this)
+            break
+          }
         }
+      } else {
+        resp += $.html(this)
       }
     })
 
     $('div').each(function () {
-      for (const keyword of keywords) {
-        if ($(this).children('div').length === 0 && $.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-          resp += $.html(this)
+      if (keywords.length !== 0) {
+        for (const keyword of keywords) {
+          if ($(this).children('div').length === 0 && $.html(this).toLowerCase().includes(keyword.toLowerCase())) {
+            resp += $.html(this)
+            break
+          }
         }
+      } else {
+        resp += $.html(this)
       }
     })
 
     $('span').each(function () {
-      for (const keyword of keywords) {
-        if ($(this).children.length === 0 && $.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-          resp += $.html(this)
+      if (keywords.length !== 0) {
+        for (const keyword of keywords) {
+          if ($(this).children.length === 0 && $.html(this).toLowerCase().includes(keyword.toLowerCase())) {
+            resp += $.html(this)
+            break
+          }
         }
+      } else {
+        resp += $.html(this)
       }
     })
   }
 
-  if (action === 'scroll') {
-    $('div').each(function () {
-      for (const keyword of keywords) {
-        if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-          resp += $.html(this)
-        }
-      }
-    })
-  }
   return resp
 }
 
@@ -173,6 +223,8 @@ export async function getText (locator: Locator): Promise<string> {
   let result = ''
   result += await locator.getAttribute('aria-label') ?? '' + ' '
   result += await locator.getAttribute('label') ?? '' + ' '
+  result += await locator.getAttribute('href') ?? '' + ' '
+  result += await locator.getAttribute('placeholder') ?? '' + ' '
 
   result += await locator.innerText()
 
