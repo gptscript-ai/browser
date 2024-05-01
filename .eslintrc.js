@@ -22,5 +22,6 @@ module.exports = {
         "ecmaVersion": "latest"
     },
     "rules": {
+        "no-labels": "off"
     }
 }

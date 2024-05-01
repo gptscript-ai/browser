@@ -12,11 +12,12 @@ import * as path from 'path'
 import * as os from 'os'
 import { login } from './login'
 import * as fs from 'fs'
+import { scrollToBottom } from './scrollToBottom'
 
 async function main (): Promise<void> {
   const app = express()
-  // Get 9888 from the environment variable or use 9888 if it is not defined
-  const port = process.env.PORT || 9888
+  // Get port from the environment variable or use 9888 if it is not defined
+  const port = process.env.PORT ?? 9888
   delete (process.env.GPTSCRIPT_INPUT)
   app.use(bodyParser.json())
 
@@ -76,16 +77,20 @@ async function main (): Promise<void> {
 
     if (req.path === '/browse') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      res.send(await browse(context, website, sessionID, false))
-    } else if (req.path === '/summarize') {
-      res.send(await browse(context, website, sessionID, true))
+      res.send(await browse(context, website, sessionID, 'browse'))
+    } else if (req.path === '/getPageContents') {
+      res.send(await browse(context, website, sessionID, 'getPageContents'))
+    } else if (req.path === '/getPageLinks') {
+      res.send(await browse(context, website, sessionID, 'getPageLinks'))
+    } else if (req.path === '/getPageImages') {
+      res.send(await browse(context, website, sessionID, 'getPageImages'))
     } else if (req.path === '/click') {
       await click(context, userInput, keywords.map((keyword) => keyword.trim()))
     } else if (req.path === '/fill') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       await fill(context, userInput, data.content ?? '', keywords)
     } else if (req.path === '/enter') {
-      await enter(context, data.input as string)
+      await enter(context)
     } else if (req.path === '/check') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       await check(context, userInput, keywords)
@@ -94,6 +99,8 @@ async function main (): Promise<void> {
       await select(context, userInput, data.option ?? '')
     } else if (req.path === '/login') {
       await login(context, website, sessionID)
+    } else if (req.path === '/scrollToBottom') {
+      await scrollToBottom(context)
     }
 
     res.end()

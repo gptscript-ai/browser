@@ -1,8 +1,8 @@
 import { type BrowserContext } from 'playwright'
 import { delay } from './delay'
 import { getText, inspect } from './browse'
-import path from 'path'
 
+// click navigates a link or clicks on an element matching the given keywords.
 export async function click (context: BrowserContext, userInput: string, keywords: string[]): Promise<void> {
   const locators = await inspect(context, userInput, 'click', keywords)
   console.log(locators)
@@ -17,41 +17,27 @@ export async function click (context: BrowserContext, userInput: string, keyword
         continue
       }
       for (const element of elements) {
+        await element.scrollIntoViewIfNeeded()
         const innerText = await getText(element)
         for (const keyword of keywords) {
           if (innerText.toLowerCase().includes(keyword.toLowerCase())) {
-            // first, try to see if it is a link. If so, just go to the link
-            const href = await element.getAttribute('href')
-            if (href !== null) {
-              if (href.toString().startsWith('/')) {
-                await page.goto(path.join(page.url(), href.toString()))
-                await delay(3000)
-              } else {
-                await page.goto(href.toString())
-                await delay(3000)
-              }
+            const boundingBox = await element.boundingBox()
+            if (boundingBox != null) {
+              await page.mouse.click(boundingBox.x + boundingBox.width / 2, boundingBox.y + boundingBox.height / 2)
+              await delay(5000)
               done = true
               break
             } else {
-              // if it is not a link, then try to click on the element on the bounding box
-              const boundingBox = await element.boundingBox()
-              if (boundingBox != null) {
-                await page.mouse.click(boundingBox.x + boundingBox.width / 2, boundingBox.y + boundingBox.height / 2)
-                await delay(5000)
-                done = true
-                break
-              } else {
-                let parent = element.locator('..')
-                while (true) {
-                  const boundingBox = await parent.boundingBox()
-                  if (boundingBox != null) {
-                    await page.mouse.click(boundingBox.x + boundingBox.width / 2, boundingBox.y + boundingBox.height / 2)
-                    await delay(5000)
-                    done = true
-                    break
-                  }
-                  parent = parent.locator('..')
+              let parent = element.locator('..')
+              while (true) {
+                const boundingBox = await parent.boundingBox()
+                if (boundingBox != null) {
+                  await page.mouse.click(boundingBox.x + boundingBox.width / 2, boundingBox.y + boundingBox.height / 2)
+                  await delay(5000)
+                  done = true
+                  break
                 }
+                parent = parent.locator('..')
               }
             }
           }

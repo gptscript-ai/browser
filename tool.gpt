@@ -1,80 +1,98 @@
-export: browse, summarize, click, fill, check, select, enter, login
-description: A toolset that can be used to browse and navigate websites. This tool is capable of following links, filling out forms, clicking buttons, and other basic web browsing functionality. It can also reuse your existing browser session (allowing you to navigate to websites that you manually logged into) if you add the following to your prompt: "Reuse existing browser userdata and session."
+export: browse, getPageContents, getPageImages, click, fill, check, select, enter, login, scroll
+description: A toolset that can be used to browse and navigate websites.
 
 ---
 name: browse
-description: browse website. Reuse session id from user inputs if possible.
-args: website: the website url to browse. The url should have https protocol prepend.
-args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
-args: headless: Whether to launch actual browsr. Provide true if it is specifically asked to not launch a browser. Alse provide false.
+description: Navigates to a website, but does not return the content.
+args: website: The URL of the website to visit. Must be an HTTPS URL.
+args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
+args: headless: Whether to launch actual browser. Set to false unless asked otherwise.
 tools: service
 
 #!http://service.daemon.gptscript.local/browse
 
 ---
-name: summarize
-description: summarize the current webpage. Reuse session id from user inputs if possible. Only use this tool if user want to know more information about the current website.
-args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
-args: headless: Whether to launch actual browsr. Provide true if it is specifically asked to not launch a browser. Alse provide false.
+name: getPageContents
+description: Navigates to a website and returns its HTML content.
+args: website: (optional) The HTTPS URL of the website to visit. If unspecified, the current page will be used.
+args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
+args: headless: Whether to launch actual browser. Set to false unless asked otherwise.
 tools: service
 
-#!http://service.daemon.gptscript.local/summarize
+#!http://service.daemon.gptscript.local/getPageContents
+
+---
+name: getPageImages
+description: Navigates to a website and returns all the img tags in raw HTML, including their source URLs.
+args: website: The URL of the website to visit. Must be an HTTPS URL.
+args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
+args: headless: Whether to launch actual browser. Set to false unless asked otherwise.
+tools: service
+
+#!http://service.daemon.gptscript.local/getPageImages
 
 ---
 name: login
 description: login a website.
 args: website: the website url to browse. The url should have https protocol prepend.
-args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
+args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
 tools: service
 
 #!http://service.daemon.gptscript.local/login
 
 ---
 name: click
-description: Click buttons from website.
-args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
-args: userInput: the element description to look for. This is a required input parameter for the API function, which must be explicitly provided by ChatGPT in the request. Failure to include this parameter, or providing an invalid value, will result in an error or failure in the execution of the API call.
-args: keywords: A list of keywords about the element, separated by comma. This is a required input parameter for the API function, which must be explicitly provided by ChatGPT in the request. Failure to include this parameter, or providing an invalid value, will result in an error or failure in the execution of the API call.
+description: Clicks buttons on the web page.
+args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
+args: userInput: (required) Description of the element to click on.
+args: keywords: (required) Comma-separated list of keywords related to the element.
 tools: service
 
 #!http://service.daemon.gptscript.local/click
 
 ---
 name: fill
-description: fill text content into website.
-args: userInput: the element description to look for
-args: content: content to fill in
-args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
-args: keywords: A list of keywords about the element, separated by comma. This is a required input parameter for the API function, which must be explicitly provided by ChatGPT in the request. Failure to include this parameter, or providing an invalid value, will result in an error or failure in the execution of the API call.
+description: Fills text into an element on the web page.
+args: userInput: Description of the element to fill.
+args: content: The text to fill into the element.
+args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
+args: keywords: (required) Comma-separated list of keywords related to the element.
 tools: service
 
 #!http://service.daemon.gptscript.local/fill
 
 ---
 name: enter
-description: Only invoke when user specifically ask to press certain keyboard input to the current page. Provide keyboard input into current page based on user instruction. 
-args: input: the keyboard input.
-args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
+description: Presses the enter key. Useful after filling out a form or other input.
+args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
 tools: service
 
 #!http://service.daemon.gptscript.local/enter
 
 ---
+name: scroll
+description: Loads more content by scrolling to the bottom of the page. Useful for sites like Reddit which support infinite scroll.
+args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
+tools: service
+
+#!http://service.daemon.gptscript.local/scrollToBottom
+
+---
 name: check
-description: check radio button input
-args: userInput: the instruction to find the element based on user description
-args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
-args: keywords: A list of keywords about the element, separated by comma. This is a required input parameter for the API function, which must be explicitly provided by ChatGPT in the request. Failure to include this parameter, or providing an invalid value, will result in an error or failure in the execution of the API call.
+description: Checks a radio button on the web page.
+args: userInput: Description of the element to check.
+args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
+args: keywords: (required) Comma-separated list of keywords related to the element.
 tools: service
 
 #!http://service.daemon.gptscript.local/check
 
 ---
 name: select
-description: select input from dropdown
-args: userInput: the element description to look for
-args: sessionID: id of an existing session. optional but don't provide this arg unless user specifically provides one.
-args: option: option to choose from dropdown
+description: Selects an option from a dropdown menu.
+args: userInput: Description of the element to select from.
+args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
+args: option: The option to choose in the dropdown.
 tools: service
 
 #!http://service.daemon.gptscript.local/select
