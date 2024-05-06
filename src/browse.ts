@@ -31,12 +31,6 @@ export async function browse (context: BrowserContext, website: string, sessionI
     const html = await page.content()
     const $ = cheerio.load(html)
 
-    // For anchor tags, we want to add the href to the text itself, so that the LLM will see it.
-    // $('a').each(function () {
-    //   const link = new URL($(this).attr('href') ?? '', page.url()).toString()
-    //   $(this).text(`[${$(this).text().trim()}](${link.trim()})`)
-    // })
-
     $('script').remove()
     $('style').remove()
     $('[style]').removeAttr('style')
@@ -104,7 +98,7 @@ export async function inspect (context: BrowserContext, userInput: string, actio
     retry++
   }
 
-  const betterInstructions: string = `You are an expert with deep knowledge of web pages, the Playwright library, and HTML elements.
+  const instructions: string = `You are an expert with deep knowledge of web pages, the Playwright library, and HTML elements.
     Based on the provided HTML below, return the locator that can be used to locate the element described by the user input.
     Use an ID or text-based locator if possible. Validate the locator before you return it. Do not escape the locator unless necessary.
     Return exactly one locator that is the best match, and don't quote the output.
@@ -114,21 +108,7 @@ export async function inspect (context: BrowserContext, userInput: string, actio
     HTML:
     ${elementData}`
 
-  // const oldInstructions: string = `you are an expert in understanding web pages, playwright library and HTML elements and can help me find the information I need.
-  //  You will be given html content and asked to find specific elements or information.
-  //  Based html data provided below, return the locator that can be used to locate the element using playwright library page.locator().
-  //  When asked about filling data, find all the element like input, form, textarea. return the most accurate locator you can find.
-  //  When asked about clicking button, only find all the button elements. If you can't find button, find div instead. return the most accurate locator you can find.
-  //  When asked about clicking links, Only find link that are relevant to what user is looking for. Return exact one link that is the best match.
-  //  Use id or text based locator first. Validate the locator before returning. Don't escape the locator with \\ unless it is necessary. Return exact one locator that is the best match
-  //  Provided data: '${elementData}'.
-  //  UserInput: ${userInput}
-  //
-  //  Don't quote the output.`
-
-  const tool = new Tool({
-    instructions: betterInstructions
-  })
+  const tool = new Tool({ instructions })
 
   const output = (await exec(tool, {})).replace('\n', '').trim()
 
