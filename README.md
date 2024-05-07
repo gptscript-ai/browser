@@ -1,22 +1,6 @@
-# Gptscript browser tool
+# GPTScript Browser Tool
 
-This tool enables Gptscript to browse websites, navigate through pages, and execute specific actions seamlessly.
-
-## Quick start
-
-To get started, execute the following commands:
-
-```
-git clone https://github.com/gptscript-ai/browser
-
-cd browser
-
-npm install
-
-npm run server
-
-gptscript ./examples/coachella-browse.gpt
-```
+This tool enables GPTScript to browse websites, navigate through pages, and execute specific actions seamlessly in the browser.
 
 ## Examples
 
@@ -32,22 +16,22 @@ Video Demonstrations:
 
 ## Reuse existing cookies and sessions
 
-To use a specific session id and login to that session, first try to log in to the website with specific session id. For example:
+You can define a specific session ID in order to persist cookies and login information across multiple GPTScript executions.
 
 ```
 Tools: github.com/gptscript-ai/browser
 
-Use sesssion `linkedin`.
+Use session `linkedin`.
 
-Login to `www.linkedin.com`.
+Log in to `www.linkedin.com`.
 ```
 
-Once you are logged in, close the browser tab. If you run other gptscripts with the same session id, it should keep you logged in with the cookie you have.
+If you run other scripts with the same session ID, it should keep you logged in with the cookie you have.
 
 ```
 Tools: github.com/gptscript-ai/browser
 
-Use sesssion id `linkedin`.
+Use session id `linkedin`.
 
-Go to `https://www.linkedin.com/in/ibuildthecloud/`, give me a list of company darren has worked recently and how long he has worked, what did he do for each job.
+Go to `https://www.linkedin.com/in/ibuildthecloud/`, give me a list of companies Darren has worked at recently as well as his job title at each one.
 ```

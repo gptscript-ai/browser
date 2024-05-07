@@ -5,6 +5,7 @@ import { delay } from './delay'
 
 const mutex = new Mutex()
 
+// check checks a checkbox or radio button.
 export async function check (context: BrowserContext, userInput: string, keywords: string[]): Promise<void> {
   const release = await mutex.acquire()
   try {

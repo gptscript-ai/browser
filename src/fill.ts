@@ -9,7 +9,7 @@ export async function fill (context: BrowserContext, userInput: string, content:
   const release = await mutex.acquire()
   try {
     const locators = await inspect(context, userInput, 'fill', keywords)
-    let done = false
+    outer:
     for (const locator of locators) {
       console.log(locator)
       try {
@@ -22,16 +22,9 @@ export async function fill (context: BrowserContext, userInput: string, content:
             if (innerText.toLowerCase().includes(keyword.toLowerCase())) {
               await element.fill(content)
               await delay(5000)
-              done = true
-              break
+              break outer
             }
           }
-          if (done) {
-            break
-          }
-        }
-        if (done) {
-          break
         }
       } catch (e) {
       }
