@@ -100,11 +100,12 @@ export async function inspect (context: BrowserContext, userInput: string, actio
 
   const instructions: string = `You are an expert with deep knowledge of web pages, the Playwright library, and HTML elements.
     Based on the provided HTML below, return the locator that can be used to locate the element described by the user input.
-    Use an ID or text-based locator if possible. Validate the locator before you return it. Do not escape the locator unless necessary.
+    Use an ID or text-based locator if possible. Do not use ARIA-related things.
+    Validate the locator before you return it. Do not escape the locator unless necessary.
     Return exactly one locator that is the best match, and don't quote the output.
-    
+
     User Input: ${userInput}
-    
+
     HTML:
     ${elementData}`
 
