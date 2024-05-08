@@ -5,7 +5,6 @@ description: A toolset that can be used to browse and navigate websites.
 name: browse
 description: Navigates to a website, but does not return the content.
 args: website: The URL of the website to visit. Must be an HTTPS URL.
-args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
 args: headless: Whether to launch actual browser. Set to false unless asked otherwise.
 tools: service
 
@@ -15,7 +14,6 @@ tools: service
 name: getPageContents
 description: Navigates to a website and returns its HTML content.
 args: website: (optional) The HTTPS URL of the website to visit. If unspecified, the current page will be used.
-args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
 args: headless: Whether to launch actual browser. Set to false unless asked otherwise.
 tools: service
 
@@ -25,7 +23,6 @@ tools: service
 name: getPageImages
 description: Navigates to a website and returns all the img tags in raw HTML, including their source URLs.
 args: website: The URL of the website to visit. Must be an HTTPS URL.
-args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
 args: headless: Whether to launch actual browser. Set to false unless asked otherwise.
 tools: service
 
@@ -35,7 +32,6 @@ tools: service
 name: login
 description: login a website.
 args: website: the website url to browse. The url should have https protocol prepend.
-args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
 tools: service
 
 #!http://service.daemon.gptscript.local/login
@@ -43,7 +39,6 @@ tools: service
 ---
 name: click
 description: Clicks buttons on the web page.
-args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
 args: userInput: (required) Description of the element to click on.
 args: keywords: (required) Comma-separated list of keywords related to the element.
 tools: service
@@ -55,7 +50,6 @@ name: fill
 description: Fills text into an element on the web page.
 args: userInput: Description of the element to fill.
 args: content: The text to fill into the element.
-args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
 args: keywords: (required) Comma-separated list of keywords related to the element.
 tools: service
 
@@ -64,7 +58,6 @@ tools: service
 ---
 name: enter
 description: Presses the enter key. Useful after filling out a form or other input.
-args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
 tools: service
 
 #!http://service.daemon.gptscript.local/enter
@@ -72,7 +65,6 @@ tools: service
 ---
 name: scroll
 description: Loads more content by scrolling to the bottom of the page. Useful for sites like Reddit which support infinite scroll.
-args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
 tools: service
 
 #!http://service.daemon.gptscript.local/scrollToBottom
@@ -81,7 +73,6 @@ tools: service
 name: check
 description: Checks a radio button on the web page.
 args: userInput: Description of the element to check.
-args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
 args: keywords: (required) Comma-separated list of keywords related to the element.
 tools: service
 
@@ -91,7 +82,6 @@ tools: service
 name: select
 description: Selects an option from a dropdown menu.
 args: userInput: Description of the element to select from.
-args: sessionID: Don't provide this arg unless the prompt specifies a session ID.
 args: option: The option to choose in the dropdown.
 tools: service
 
