@@ -16,22 +16,8 @@ Video Demonstrations:
 
 ## Reuse existing cookies and sessions
 
-You can define a specific session ID in order to persist cookies and login information across multiple GPTScript executions.
+You can define a specific workspace directory in order to persist your browser session and cookies across different scripts.
 
-```
-Tools: github.com/gptscript-ai/browser
+`gptscript --workspace /path/to/workspace my-script.gpt`
 
-Use session `linkedin`.
-
-Log in to `www.linkedin.com`.
-```
-
-If you run other scripts with the same session ID, it should keep you logged in with the cookie you have.
-
-```
-Tools: github.com/gptscript-ai/browser
-
-Use session id `linkedin`.
-
-Go to `https://www.linkedin.com/in/ibuildthecloud/`, give me a list of companies Darren has worked at recently as well as his job title at each one.
-```
+If you run other scripts with the same workspace, it should reuse the existing cookies and session.
