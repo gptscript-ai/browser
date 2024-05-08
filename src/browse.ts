@@ -26,13 +26,33 @@ export async function browse (context: BrowserContext, website: string, sessionI
     await delay(5000)
   }
 
+  const iframes = page.locator('iframe')
+  const count = await iframes.count()
+  for (let i = 0; i < count; i++) {
+    const frame = iframes.nth(i)
+    if (await frame.isVisible()) {
+      try {
+        await frame.scrollIntoViewIfNeeded({ timeout: 3000 })
+      } catch (e) {} // ignore timeouts
+    }
+  }
+
   let resp: string = ''
   if (mode === 'getPageContents') {
     const html = await page.content()
     const $ = cheerio.load(html)
 
-    $('script').remove()
+    $('script').each(function () {
+      const elem = $(this)
+      elem.contents().filter(function () {
+        return this.type === 'text'
+      }).remove()
+      const children = elem.contents()
+      elem.before(children)
+      elem.remove()
+    })
     $('style').remove()
+    $('img').remove()
     $('[style]').removeAttr('style')
     $('[onclick]').removeAttr('onclick')
     $('[onload]').removeAttr('onload')
@@ -141,7 +161,8 @@ export async function inspectForSelect (context: BrowserContext, userInput: stri
 
   const instructions: string = `You are an expert with deep knowledge of web pages, the Playwright library, and HTML elements.
     Based on the provided HTML below, return the locator that can be used to locate the select element described by the user input.
-    Use an ID or text-based locator if possible. Validate the locator before you return it. Do not escape the locator unless necessary.
+    Use an ID or text-based locator if possible. Do not use ARIA-related things.
+    Validate the locator before you return it. Do not escape the locator unless necessary.
     Also determine which of the options in the select element should be selected based on the user selection.
     Return a JSON object with the keys 'locator' and 'option'.
     
