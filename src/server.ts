@@ -8,11 +8,9 @@ import { fill } from './fill'
 import { enter } from './enter'
 import { check } from './check'
 import { select } from './select'
-import * as path from 'path'
-import * as os from 'os'
 import { login } from './login'
-import * as fs from 'fs'
 import { scrollToBottom } from './scrollToBottom'
+import { existsSync, mkdirSync } from 'fs'
 
 async function main (): Promise<void> {
   const app = express()
@@ -35,28 +33,24 @@ async function main (): Promise<void> {
     const website: string = data.website ?? ''
     const userInput: string = data.userInput ?? ''
     const keywords: string[] = (data.keywords ?? '').split(',')
-    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-    let sessionID = ''
-    if (data.sessionID !== undefined) {
-      sessionID = data.sessionID
-    } else {
-      const sessionFile = path.join(os.homedir(), '/.gptscript/session')
-      if (!fs.existsSync(sessionFile)) {
-        fs.mkdirSync(path.dirname(sessionFile), { recursive: true })
-        fs.writeFileSync(sessionFile, new Date().getTime().toString())
-      }
-      sessionID = fs.readFileSync(sessionFile, 'utf8').toString()
+
+    if (process.env.GPTSCRIPT_WORKSPACE_ID === undefined || process.env.GPTSCRIPT_WORKSPACE_DIR === undefined) {
+      res.status(400).send('GPTScript workspace ID and directory are not set')
+      return
     }
 
-    const cacheDir = getGlobalCacheDir(sessionID)
-    const storagePath: string = data.storagePath ?? cacheDir
+    const sessionID: string = process.env.GPTSCRIPT_WORKSPACE_ID
+    const sessionDir: string = process.env.GPTSCRIPT_WORKSPACE_DIR + '/browser_session'
+    if (!existsSync(sessionDir)) {
+      mkdirSync(sessionDir)
+    }
 
     let context: BrowserContext
     if (contextMap[sessionID] !== undefined) {
       context = contextMap[sessionID]
     } else {
       context = await chromium.launchPersistentContext(
-        storagePath,
+        sessionDir,
         {
           userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
           headless: data.headless === 'true',
@@ -77,13 +71,13 @@ async function main (): Promise<void> {
 
     if (req.path === '/browse') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      res.send(await browse(context, website, sessionID, 'browse'))
+      res.send(await browse(context, website, 'browse'))
     } else if (req.path === '/getPageContents') {
-      res.send(await browse(context, website, sessionID, 'getPageContents'))
+      res.send(await browse(context, website, 'getPageContents'))
     } else if (req.path === '/getPageLinks') {
-      res.send(await browse(context, website, sessionID, 'getPageLinks'))
+      res.send(await browse(context, website, 'getPageLinks'))
     } else if (req.path === '/getPageImages') {
-      res.send(await browse(context, website, sessionID, 'getPageImages'))
+      res.send(await browse(context, website, 'getPageImages'))
     } else if (req.path === '/click') {
       await click(context, userInput, keywords.map((keyword) => keyword.trim()))
     } else if (req.path === '/fill') {
@@ -98,7 +92,7 @@ async function main (): Promise<void> {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       await select(context, userInput, data.option ?? '')
     } else if (req.path === '/login') {
-      await login(context, website, sessionID)
+      await login(context, website)
     } else if (req.path === '/scrollToBottom') {
       await scrollToBottom(context)
     }
@@ -106,31 +100,37 @@ async function main (): Promise<void> {
     res.end()
   })
 
+  // Start the server
+  const server = app.listen(port, () => {
+    console.log(`Server is listening on port ${port}`)
+  })
+
   // stdin is used as a keep-alive mechanism. When the parent process dies the stdin will be closed and this process
   // will exit.
   process.stdin.resume()
   process.stdin.on('close', () => {
     console.log('Closing the server')
+    server.close()
     process.exit(0)
   })
 
-  // Start the server
-  app.listen(port, () => {
-    console.log(`Server is listening on port ${port}`)
+  process.on('SIGINT', () => {
+    console.log('Closing the server')
+    server.close()
+    process.exit(0)
   })
-}
 
-function getGlobalCacheDir (name: string): string {
-  const homedir = os.homedir()
-  if (process.platform === 'darwin') {
-    return path.join(homedir, 'Library', 'Caches', name)
-  }
+  process.on('SIGTERM', () => {
+    console.log('Closing the server')
+    server.close()
+    process.exit(0)
+  })
 
-  if (process.platform === 'win32') {
-    return path.join(process.env.APPDATA ?? path.join(homedir, 'AppData', 'Local'), name, 'Cache')
-  }
-
-  return path.join(process.env.XDG_CACHE_HOME ?? path.join(homedir, '.cache'), name)
+  process.on('SIGHUP', () => {
+    console.log('Closing the server')
+    server.close()
+    process.exit(0)
+  })
 }
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises

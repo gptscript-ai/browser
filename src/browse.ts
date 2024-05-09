@@ -8,7 +8,7 @@ import { URL } from 'url'
 import TurndownService from 'turndown'
 
 // browse navigates to the website and returns the text content of the page (if print is true)
-export async function browse (context: BrowserContext, website: string, sessionID: string, mode: string): Promise<string> {
+export async function browse (context: BrowserContext, website: string, mode: string): Promise<string> {
   let page: Page
   const pages = context.pages()
   if (pages.length > 1) {
@@ -88,7 +88,6 @@ export async function browse (context: BrowserContext, website: string, sessionI
       resp += `${Object.entries($(this).attr() ?? '').toString()}\n`
     })
   }
-  resp += `sessionID: ${sessionID}\n`
   return resp.split('\n').filter(line => line.trim() !== '').join('\n')
 }
 
