@@ -16,7 +16,7 @@ Video Demonstrations:
 
 ## Reuse existing cookies and sessions
 
-You can define a specific workspace directory in order to persist your browser session and cookies across different scripts.
+You can define a specific workspace directory on your system in order to persist your browser session and cookies across different scripts.
 
 `gptscript --workspace /path/to/workspace my-script.gpt`
 
