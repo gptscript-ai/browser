@@ -6,6 +6,7 @@ import { Tool } from '@gptscript-ai/gptscript/lib/tool'
 import { type Locator } from '@playwright/test'
 import { URL } from 'url'
 import TurndownService from 'turndown'
+import * as fs from 'node:fs'
 
 // browse navigates to the website and returns the text content of the page (if print is true)
 export async function browse (context: BrowserContext, website: string, mode: string): Promise<string> {
@@ -26,7 +27,7 @@ export async function browse (context: BrowserContext, website: string, mode: st
     await delay(5000)
   }
 
-  const iframes = page.locator('iframe')
+  const iframes = page.locator('body').locator('iframe')
   const count = await iframes.count()
   for (let i = 0; i < count; i++) {
     const frame = iframes.nth(i)
@@ -39,7 +40,7 @@ export async function browse (context: BrowserContext, website: string, mode: st
 
   let resp: string = ''
   if (mode === 'getPageContents') {
-    const html = await page.content()
+    const html = await getPageHTML(page)
     const $ = cheerio.load(html)
 
     $('script').each(function () {
@@ -75,14 +76,14 @@ export async function browse (context: BrowserContext, website: string, mode: st
       resp += turndownService.turndown($.html(this))
     })
   } else if (mode === 'getPageLinks') {
-    const html = await page.content()
+    const html = await getPageHTML(page)
     const $ = cheerio.load(html)
     $('a').each(function () {
       const link = new URL($(this).attr('href') ?? '', page.url()).toString()
       resp += `[${$(this).text().trim()}](${link.trim()})\n`
     })
   } else if (mode === 'getPageImages') {
-    const html = await page.content()
+    const html = await getPageHTML(page)
     const $ = cheerio.load(html)
     $('img').each(function () {
       resp += `${Object.entries($(this).attr() ?? '').toString()}\n`
@@ -119,7 +120,7 @@ export async function inspect (context: BrowserContext, userInput: string, actio
 
   const instructions: string = `You are an expert with deep knowledge of web pages, the Playwright library, and HTML elements.
     Based on the provided HTML below, return the locator that can be used to locate the element described by the user input.
-    Use an ID or text-based locator if possible. Do not use ARIA-related things.
+    Always use an ID or text locator if possible. Do not use ARIA locators.
     Validate the locator before you return it. Do not escape the locator unless necessary.
     Return exactly one locator that is the best match, and don't quote the output.
 
@@ -184,7 +185,7 @@ export async function inspectForSelect (context: BrowserContext, userInput: stri
 
 // summarize returns relevant HTML elements for the given keywords and action
 export async function summarize (page: Page, keywords: string[], action: string): Promise<string> {
-  const htmlContent = await page.content()
+  const htmlContent = await getPageHTML(page)
   const $ = cheerio.load(htmlContent)
 
   let resp = ''
@@ -312,12 +313,16 @@ export async function summarize (page: Page, keywords: string[], action: string)
     $('div').each(function () {
       if (keywords.length !== 0) {
         for (const keyword of keywords) {
-          if ($(this).children('div').length === 0 && $.html(this).toLowerCase().includes(keyword.toLowerCase())) {
+          if (hasNoNonTextChildren(this) && $.html(this).toLowerCase().includes(keyword.toLowerCase())) {
             resp += '<div '
             for (const attr of this.attributes) {
               resp += ` ${attr.name}="${attr.value}"`
             }
-            resp += ' />'
+            resp += '>'
+            for (const c of this.children) {
+              resp += $.html(c)
+            }
+            resp += '</div>'
             break
           }
         }
@@ -326,19 +331,27 @@ export async function summarize (page: Page, keywords: string[], action: string)
         for (const attr of this.attributes) {
           resp += ` ${attr.name}="${attr.value}"`
         }
-        resp += ' />'
+        resp += '>'
+        for (const c of this.children) {
+          resp += $.html(c)
+        }
+        resp += '</div>'
       }
     })
 
     $('span').each(function () {
       if (keywords.length !== 0) {
         for (const keyword of keywords) {
-          if ($(this).children.length === 0 && $.html(this).toLowerCase().includes(keyword.toLowerCase())) {
+          if (hasNoNonTextChildren(this) && $.html(this).toLowerCase().includes(keyword.toLowerCase())) {
             resp += '<span '
             for (const attr of this.attributes) {
               resp += ` ${attr.name}="${attr.value}"`
             }
-            resp += ' />'
+            resp += '>'
+            for (const c of this.children) {
+              resp += $.html(c)
+            }
+            resp += '</span>'
             break
           }
         }
@@ -347,7 +360,11 @@ export async function summarize (page: Page, keywords: string[], action: string)
         for (const attr of this.attributes) {
           resp += ` ${attr.name}="${attr.value}"`
         }
-        resp += ' />'
+        resp += '>'
+        for (const c of this.children) {
+          resp += $.html(c)
+        }
+        resp += '</span>'
       }
     })
   }
@@ -356,14 +373,64 @@ export async function summarize (page: Page, keywords: string[], action: string)
   return resp.replace(/\n+/g, '\n')
 }
 
+function hasNoNonTextChildren (elem: cheerio.Element): boolean {
+  for (const child of elem.children) {
+    if (child.nodeType !== 3) {
+      return false
+    }
+  }
+  return true
+}
+
 export async function getText (locator: Locator): Promise<string> {
   let result = ''
-  result += await locator.getAttribute('aria-label') ?? '' + ' '
-  result += await locator.getAttribute('label') ?? '' + ' '
-  result += await locator.getAttribute('href') ?? '' + ' '
-  result += await locator.getAttribute('placeholder') ?? '' + ' '
+  result += await locator.getAttribute('aria-label', { timeout: 3000 }) ?? '' + ' '
+  result += await locator.getAttribute('label', { timeout: 3000 }) ?? '' + ' '
+  result += await locator.getAttribute('href', { timeout: 3000 }) ?? '' + ' '
+  result += await locator.getAttribute('placeholder', { timeout: 3000 }) ?? '' + ' '
 
   result += await locator.innerText()
 
   return result
+}
+
+const findShadowRoot = (): string => {
+  const queue: Element[] = [document.body]
+  let html = ''
+
+  while (queue.length > 0) {
+    const elem = queue.shift()
+
+    if ((elem?.shadowRoot) !== null) {
+      html += elem?.shadowRoot.innerHTML // Shadow root found
+    }
+
+    // Add all child elements to the queue for BFS
+    if (elem?.children != null) {
+      queue.push(...Array.from(elem?.children))
+    }
+  }
+
+  return html
+}
+
+async function getPageHTML (page: Page): Promise<string> {
+  let html = await page.content()
+  // Do a breadth-first search to look for a shadow DOM
+  const shadowRootHTML = await page.evaluate(findShadowRoot)
+  if (shadowRootHTML !== undefined) {
+    html += shadowRootHTML
+  }
+
+  // Check for shadow DOM in iframes
+  for (const f of page.frames()) {
+    try {
+      const shadowRootHTML = await f.locator('body').evaluate(findShadowRoot, { timeout: 7000 })
+      if (shadowRootHTML !== undefined) {
+        html += shadowRootHTML
+      }
+    } catch (e) {}
+  }
+
+  return html
 }

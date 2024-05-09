@@ -69,6 +69,11 @@ async function main (): Promise<void> {
       }, 3000)
     })
 
+    let allElements = false
+    if (data.allElements === 'true' || data.allElements === true) {
+      allElements = true
+    }
+
     if (req.path === '/browse') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       res.send(await browse(context, website, 'browse'))
@@ -79,7 +84,7 @@ async function main (): Promise<void> {
     } else if (req.path === '/getPageImages') {
       res.send(await browse(context, website, 'getPageImages'))
     } else if (req.path === '/click') {
-      await click(context, userInput, keywords.map((keyword) => keyword.trim()))
+      await click(context, userInput, keywords.map((keyword) => keyword.trim()), allElements)
     } else if (req.path === '/fill') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       await fill(context, userInput, data.content ?? '', keywords)
@@ -100,17 +105,18 @@ async function main (): Promise<void> {
     res.end()
   })
 
-  // stdin is used as a keep-alive mechanism. When the parent process dies the stdin will be closed and this process
-  // will exit.
-  // process.stdin.resume()
-  // process.stdin.on('close', () => {
-  //   console.log('Closing the server')
-  //   process.exit(0)
-  // })
-
   // Start the server
   const server = app.listen(port, () => {
     console.log(`Server is listening on port ${port}`)
+  })
+
+  // stdin is used as a keep-alive mechanism. When the parent process dies the stdin will be closed and this process
+  // will exit.
+  process.stdin.resume()
+  process.stdin.on('close', () => {
+    console.log('Closing the server')
+    server.close()
+    process.exit(0)
   })
 
   process.on('SIGINT', () => {
