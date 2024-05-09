@@ -100,17 +100,18 @@ async function main (): Promise<void> {
     res.end()
   })
 
-  // stdin is used as a keep-alive mechanism. When the parent process dies the stdin will be closed and this process
-  // will exit.
-  // process.stdin.resume()
-  // process.stdin.on('close', () => {
-  //   console.log('Closing the server')
-  //   process.exit(0)
-  // })
-
   // Start the server
   const server = app.listen(port, () => {
     console.log(`Server is listening on port ${port}`)
+  })
+
+  // stdin is used as a keep-alive mechanism. When the parent process dies the stdin will be closed and this process
+  // will exit.
+  process.stdin.resume()
+  process.stdin.on('close', () => {
+    console.log('Closing the server')
+    server.close()
+    process.exit(0)
   })
 
   process.on('SIGINT', () => {
