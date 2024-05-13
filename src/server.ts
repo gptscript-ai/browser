@@ -1,8 +1,8 @@
 import express, { type Request, type Response } from 'express'
 import bodyParser from 'body-parser'
-import { type BrowserContext } from 'playwright'
+import { type BrowserContext, type Page } from 'playwright'
 import { chromium } from 'playwright'
-import { browse } from './browse'
+import { browse, close } from './browse'
 import { click } from './click'
 import { fill } from './fill'
 import { enter } from './enter'
@@ -11,6 +11,12 @@ import { select } from './select'
 import { login } from './login'
 import { scrollToBottom } from './scrollToBottom'
 import { existsSync, mkdirSync } from 'fs'
+import { randomBytes } from 'node:crypto'
+import { Mutex } from 'async-mutex'
+import { screenshot } from './screenshot'
+import path from 'node:path'
+
+const mutex = new Mutex()
 
 async function main (): Promise<void> {
   const app = express()
@@ -19,7 +25,8 @@ async function main (): Promise<void> {
   delete (process.env.GPTSCRIPT_INPUT)
   app.use(bodyParser.json())
 
-  const contextMap: Record<string, BrowserContext> = {}
+  const contextMap: Record<string, BrowserContext> = {} // mapping of session ID => browser context
+  const pageMap: Record<string, Record<string, Page>> = {} // mapping of session ID => page ID => page
 
   // gptscript requires "GET /" to return 200 status code
   app.get('/', (req: Request, res: Response) => {
@@ -40,9 +47,16 @@ async function main (): Promise<void> {
     }
 
     const sessionID: string = process.env.GPTSCRIPT_WORKSPACE_ID
-    const sessionDir: string = process.env.GPTSCRIPT_WORKSPACE_DIR + '/browser_session'
+    const sessionDir: string = path.resolve(process.env.GPTSCRIPT_WORKSPACE_DIR) + '/browser_session'
     if (!existsSync(sessionDir)) {
       mkdirSync(sessionDir)
+    }
+
+    let pageID = randomBytes(8).toString('hex')
+    let printPageID = true
+    if (data.pageID !== undefined) {
+      pageID = data.pageID
+      printPageID = false
     }
 
     let context: BrowserContext
@@ -69,6 +83,28 @@ async function main (): Promise<void> {
       }, 3000)
     })
 
+    // We lock the rest of this behind a mutex in order to use one tab at a time.
+    const release = await mutex.acquire()
+
+    let page: Page
+    if (pageMap[sessionID]?.[pageID] !== undefined) {
+      page = pageMap[sessionID][pageID]
+      if (page.isClosed()) {
+        page = await context.newPage()
+        if (pageMap[sessionID] === undefined) {
+          pageMap[sessionID] = {}
+        }
+        pageMap[sessionID][pageID] = page
+      }
+    } else {
+      page = await context.newPage()
+      if (pageMap[sessionID] === undefined) {
+        pageMap[sessionID] = {}
+      }
+      pageMap[sessionID][pageID] = page
+    }
+    await page.bringToFront()
+
     let allElements = false
     if (data.allElements === 'true' || data.allElements === true) {
       allElements = true
@@ -76,32 +112,37 @@ async function main (): Promise<void> {
 
     if (req.path === '/browse') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      res.send(await browse(context, website, 'browse'))
+      res.send(await browse(page, website, 'browse', pageID, printPageID))
     } else if (req.path === '/getPageContents') {
-      res.send(await browse(context, website, 'getPageContents'))
+      res.send(await browse(page, website, 'getPageContents', pageID, printPageID))
     } else if (req.path === '/getPageLinks') {
-      res.send(await browse(context, website, 'getPageLinks'))
+      res.send(await browse(page, website, 'getPageLinks', pageID, printPageID))
     } else if (req.path === '/getPageImages') {
-      res.send(await browse(context, website, 'getPageImages'))
+      res.send(await browse(page, website, 'getPageImages', pageID, printPageID))
     } else if (req.path === '/click') {
-      await click(context, userInput, keywords.map((keyword) => keyword.trim()), allElements)
+      await click(page, userInput, keywords.map((keyword) => keyword.trim()), allElements)
     } else if (req.path === '/fill') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await fill(context, userInput, data.content ?? '', keywords)
+      await fill(page, userInput, data.content ?? '', keywords)
     } else if (req.path === '/enter') {
-      await enter(context)
+      await enter(page)
     } else if (req.path === '/check') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await check(context, userInput, keywords)
+      await check(page, userInput, keywords)
     } else if (req.path === '/select') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await select(context, userInput, data.option ?? '')
+      await select(page, userInput, data.option ?? '')
     } else if (req.path === '/login') {
       await login(context, website)
     } else if (req.path === '/scrollToBottom') {
-      await scrollToBottom(context)
+      await scrollToBottom(page)
+    } else if (req.path === '/close') {
+      await close(page)
+    } else if (req.path === '/screenshot') {
+      await screenshot(page, userInput, keywords, (data.filename as string) ?? 'screenshot.png')
     }
 
+    release()
     res.end()
   })
 

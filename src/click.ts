@@ -1,16 +1,14 @@
-import { type BrowserContext } from 'playwright'
+import { type Page } from 'playwright'
 import { delay } from './delay'
 import { inspect } from './browse'
 
 // click navigates a link or clicks on an element matching the given keywords.
-export async function click (context: BrowserContext, userInput: string, keywords: string[], allElements: boolean): Promise<void> {
-  const locators = await inspect(context, userInput, 'click', keywords)
+export async function click (page: Page, userInput: string, keywords: string[], allElements: boolean): Promise<void> {
+  const locators = await inspect(page, userInput, 'click', keywords)
   console.log(locators)
   let done = false
   for (const locator of locators) {
     try {
-      const pages = context.pages()
-      const page = pages[pages.length - 1]
       const elements = await page.locator(`${locator}`).all()
 
       // Look in the iframes

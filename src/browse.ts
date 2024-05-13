@@ -1,4 +1,4 @@
-import { type BrowserContext, type Page } from 'playwright'
+import { type Page } from 'playwright'
 import * as cheerio from 'cheerio'
 import { delay } from './delay'
 import { exec } from '@gptscript-ai/gptscript'
@@ -7,16 +7,12 @@ import { type Locator } from '@playwright/test'
 import { URL } from 'url'
 import TurndownService from 'turndown'
 
-// browse navigates to the website and returns the text content of the page (if print is true)
-export async function browse (context: BrowserContext, website: string, mode: string): Promise<string> {
-  let page: Page
-  const pages = context.pages()
-  if (pages.length > 1) {
-    page = pages[pages.length - 1]
-  } else {
-    page = await context.newPage()
-  }
+export async function close (page: Page): Promise<void> {
+  await page.close()
+}
 
+// browse navigates to the website and returns the text content of the page (if print is true)
+export async function browse (page: Page, website: string, mode: string, pageID: string, printPageID: boolean): Promise<string> {
   if (website !== '' && page.url() !== website) {
     try {
       await page.goto(website)
@@ -88,14 +84,15 @@ export async function browse (context: BrowserContext, website: string, mode: st
       resp += `${Object.entries($(this).attr() ?? '').toString()}\n`
     })
   }
+
+  if (printPageID) {
+    resp = `Page ID: ${pageID}\n` + resp
+  }
   return resp.split('\n').filter(line => line.trim() !== '').join('\n')
 }
 
 // inspect inspects a webpage and returns a locator for a specific element based on the user's input and action.
-export async function inspect (context: BrowserContext, userInput: string, action: string, keywords?: string[]): Promise<string[]> {
-  const pages = context.pages()
-  const page = pages[pages.length - 1]
-
+export async function inspect (page: Page, userInput: string, action: string, keywords?: string[]): Promise<string[]> {
   let elementData = await summarize(page, keywords ?? [], action)
   // If no data found, try to find the element without keywords first
   if (elementData === '' && keywords == null) {
@@ -117,17 +114,7 @@ export async function inspect (context: BrowserContext, userInput: string, actio
     retry++
   }
 
-  const instructions: string = `You are an expert with deep knowledge of web pages, the Playwright library, and HTML elements.
-    Based on the provided HTML below, return the locator that can be used to locate the element described by the user input.
-    Always use an ID or text locator if possible. Do not use ARIA locators.
-    Validate the locator before you return it. Do not escape the locator unless necessary.
-    Return exactly one locator that is the best match, and don't quote the output.
-
-    User Input: ${userInput}
-
-    HTML:
-    ${elementData}`
-
+  const instructions = getActionInstructions(action, { userInput, elementData })
   const tool = new Tool({ instructions })
 
   const output = (await exec(tool, {})).replace('\n', '').trim()
@@ -135,10 +122,7 @@ export async function inspect (context: BrowserContext, userInput: string, actio
   return [output]
 }
 
-export async function inspectForSelect (context: BrowserContext, userInput: string, userSelection: string, keywords?: string[]): Promise<{ locator: string, option: string }> {
-  const pages = context.pages()
-  const page = pages[pages.length - 1]
-
+export async function inspectForSelect (page: Page, userInput: string, userSelection: string, keywords?: string[]): Promise<{ locator: string, option: string }> {
   let elementData = await summarize(page, keywords ?? [], 'select')
   if (elementData === '' && keywords == null) {
     elementData = await summarize(page, [], 'select')
@@ -158,22 +142,7 @@ export async function inspectForSelect (context: BrowserContext, userInput: stri
     retry++
   }
 
-  const instructions: string = `You are an expert with deep knowledge of web pages, the Playwright library, and HTML elements.
-    Based on the provided HTML below, return the locator that can be used to locate the select element described by the user input.
-    Use an ID or text-based locator if possible. Do not use ARIA-related things.
-    Validate the locator before you return it. Do not escape the locator unless necessary.
-    Also determine which of the options in the select element should be selected based on the user selection.
-    Return a JSON object with the keys 'locator' and 'option'.
-    
-    User Input: ${userInput}
-    User Selection: ${userSelection}
-    
-    HTML:
-    ${elementData}
-    
-    
-    Example output: {"locator":"[data-testid='SearchForm-sortBy']","option":"newest"}`
-
+  const instructions = getActionInstructions('select', { userInput, userSelection, elementData })
   const tool = new Tool({ instructions })
 
   const output = (await exec(tool, {})).replace('\n', '').trim()
@@ -264,6 +233,28 @@ export async function summarize (page: Page, keywords: string[], action: string)
   if (action === 'select') {
     $('select').each(function () {
       resp += $.html(this)
+    })
+  }
+
+  if (action === 'screenshot') {
+    // For screenshot, we want to remove scripts, text-only elements, styles, and other junk
+    // so that we can hand the more structural elements to the LLM for it to determine the best locator.
+    $('script').remove()
+    $('p').remove()
+    $('h1').remove()
+    $('h2').remove()
+    $('h3').remove()
+    $('h4').remove()
+    $('h5').remove()
+    $('li').remove()
+    $('a').remove()
+    $('style').remove()
+    $('[style]').removeAttr('style')
+    $('[onclick]').removeAttr('onclick')
+    $('[onload]').removeAttr('onload')
+    $('[onerror]').removeAttr('onerror')
+    $('body').each(function () {
+      resp += findKeywordsInElement($, this, keywords)
     })
   }
 
@@ -381,18 +372,6 @@ function hasNoNonTextChildren (elem: cheerio.Element): boolean {
   return true
 }
 
-export async function getText (locator: Locator): Promise<string> {
-  let result = ''
-  result += await locator.getAttribute('aria-label', { timeout: 3000 }) ?? '' + ' '
-  result += await locator.getAttribute('label', { timeout: 3000 }) ?? '' + ' '
-  result += await locator.getAttribute('href', { timeout: 3000 }) ?? '' + ' '
-  result += await locator.getAttribute('placeholder', { timeout: 3000 }) ?? '' + ' '
-
-  result += await locator.innerText()
-
-  return result
-}
-
 const findShadowRoot = (): string => {
   const queue: Element[] = [document.body]
   let html = ''
@@ -432,4 +411,66 @@ async function getPageHTML (page: Page): Promise<string> {
   }
 
   return html
+}
+
+function getActionInstructions (action: string, args: Record<string, string>): string {
+  switch (action) {
+    case 'select':
+      return `You are an expert with deep knowledge of web pages, the Playwright library, and HTML elements.
+    Based on the provided HTML below, return the locator that can be used to locate the select element described by the user input.
+    Use an ID (prefixed with #) or text locator if possible. Do not use ARIA locators.
+    Validate the locator before you return it. Do not escape the locator unless necessary.
+    Also determine which of the options in the select element should be selected based on the user selection.
+    Return a JSON object with the keys 'locator' and 'option'.
+    
+    User Input: ${args.userInput}
+    User Selection: ${args.userSelection}
+    
+    HTML:
+    ${args.elementData}
+    
+    
+    Example output: {"locator":"[data-testid='SearchForm-sortBy']","option":"newest"}`
+
+    case 'screenshot':
+      return `You are an expert with deep knowledge of web pages, the Playwright library, and HTML elements.
+      Based on the provided HTML below, return the locator that can be used to locate the element described by the user input.
+      The user is trying to take a screenshot of part of the page, so if there are multiple elements that look relevant,
+      select the outermost one.
+      Validate the locator before you return it. Do not escape the loator unless necessary.
+      Return exactly one locator that is the best match, and don't quote the output.
+      
+      User Input: ${args.userInput}
+      
+      HTML:
+      ${args.elementData}`
+
+    default:
+      return `You are an expert with deep knowledge of web pages, the Playwright library, and HTML elements.
+    Based on the provided HTML below, return the locator that can be used to locate the element described by the user input.
+    Always use an ID (prefixed with #) or text locator if possible. Do not use ARIA locators.
+    Validate the locator before you return it. Do not escape the locator unless necessary.
+    Return exactly one locator that is the best match, and don't quote the output.
+
+    User Input: ${args.userInput}
+
+    HTML:
+    ${args.elementData}`
+  }
+}
+
+const findKeywordsInElement = ($: cheerio.CheerioAPI, elem: cheerio.Element, keywords: string[]): string => {
+  for (const k of keywords) {
+    for (const attr of elem.attributes) {
+      if (attr.name.toLowerCase().includes(k.toLowerCase()) ||
+      attr.value.toLowerCase().includes(k.toLowerCase())) {
+        return $.html(elem)
+      }
+    }
+  }
+  let result = ''
+  for (const c of $(elem).children()) {
+    result += findKeywordsInElement($, c, keywords)
+  }
+  return result
 }

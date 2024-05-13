@@ -1,9 +1,7 @@
-import { type BrowserContext } from 'playwright'
+import { type Page } from 'playwright'
 import { delay } from './delay'
 
-export async function scrollToBottom (context: BrowserContext): Promise<void> {
-  const pages = context.pages()
-  const page = pages[pages.length - 1]
+export async function scrollToBottom (page: Page): Promise<void> {
   await page.keyboard.press('End')
   await delay(2000)
 }

@@ -1,10 +1,8 @@
-import { type BrowserContext } from 'playwright'
+import { type Page } from 'playwright'
 import { inspectForSelect } from './browse'
 
-export async function select (context: BrowserContext, userInput: string, option: string): Promise<void> {
-  const pages = context.pages()
-  const page = pages[pages.length - 1]
-  const selection = await inspectForSelect(context, option, userInput)
+export async function select (page: Page, userInput: string, option: string): Promise<void> {
+  const selection = await inspectForSelect(page, option, userInput)
 
   try {
     await page.selectOption(`${selection.locator}`, selection.option, { timeout: 5000 })
