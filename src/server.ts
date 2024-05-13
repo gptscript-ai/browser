@@ -69,6 +69,11 @@ async function main (): Promise<void> {
       }, 3000)
     })
 
+    let allElements = false
+    if (data.allElements === 'true' || data.allElements === true) {
+      allElements = true
+    }
+
     if (req.path === '/browse') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       res.send(await browse(context, website, 'browse'))
@@ -79,7 +84,7 @@ async function main (): Promise<void> {
     } else if (req.path === '/getPageImages') {
       res.send(await browse(context, website, 'getPageImages'))
     } else if (req.path === '/click') {
-      await click(context, userInput, keywords.map((keyword) => keyword.trim()))
+      await click(context, userInput, keywords.map((keyword) => keyword.trim()), allElements)
     } else if (req.path === '/fill') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       await fill(context, userInput, data.content ?? '', keywords)

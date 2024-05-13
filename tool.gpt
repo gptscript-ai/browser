@@ -41,6 +41,7 @@ name: click
 description: Clicks buttons on the web page.
 args: userInput: (required) Description of the element to click on.
 args: keywords: (required) Comma-separated list of keywords related to the element.
+args: allElements: (optional, default false) Clicks on all elements that match the description, instead of only the first.
 tools: service
 
 #!http://service.daemon.gptscript.local/click
