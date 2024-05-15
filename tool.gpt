@@ -41,9 +41,10 @@ tools: service
 
 ---
 name: click
-description: Clicks buttons on the web page.
-args: userInput: (required) Description of the element to click on.
-args: keywords: (required) Comma-separated list of keywords related to the element.
+description: Clicks elements on the web page.
+args: userInput: (required) Description of the element to click on. This will be used by the AI to determine which element to pick from the results. Be as detailed as possible.
+args: keywords: (required) Comma-separated list of keywords related to the element. These will be used to search for the element on the page.
+args: matchTextOnly: (optional) Only look for the keywords in the actual text inside of the elements. Useful in cases where the user has described text appearing on the page.
 args: allElements: (optional, default false) Clicks on all elements that match the description, instead of only the first.
 args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
 tools: service
@@ -53,9 +54,10 @@ tools: service
 ---
 name: fill
 description: Fills text into an element on the web page.
-args: userInput: Description of the element to fill.
+args: userInput: (required) Description of the element to fill. This will be used by the AI to determine which element to pick from the results. Be as detailed as possible.
+args: keywords: (required) Comma-separated list of keywords related to the element. These will be used to search for the element on the page.
+args: matchTextOnly: (optional) Only look for the keywords in the actual text inside of the elements. Useful in cases where the user has described text appearing on the page.
 args: content: The text to fill into the element.
-args: keywords: (required) Comma-separated list of keywords related to the element.
 args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
 tools: service
 
@@ -80,8 +82,9 @@ tools: service
 ---
 name: check
 description: Checks a radio button on the web page.
-args: userInput: Description of the element to check.
-args: keywords: (required) Comma-separated list of keywords related to the element.
+args: userInput: (required) Description of the element to check. This will be used by the AI to determine which element to pick from the results. Be as detailed as possible.
+args: keywords: (required) Comma-separated list of keywords related to the element. These will be used to search for the element on the page.
+args: matchTextOnly: (optional) Only look for the keywords in the actual text inside of the elements. Useful in cases where the user has described text appearing on the page.
 args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
 tools: service
 
@@ -90,7 +93,7 @@ tools: service
 ---
 name: select
 description: Selects an option from a dropdown menu.
-args: userInput: Description of the element to select from.
+args: userInput: (required) Description of the element to select from.
 args: option: The option to choose in the dropdown.
 args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
 tools: service
@@ -108,8 +111,8 @@ tools: service
 ---
 name: screenshot
 description: Takes a screenshot of an element. Saves it as a PNG file in the current workspace
-args: userInput: Description of the element to take a screenshot of.
-args: keywords: (required) Comma-separated list of keywords related to the element.
+args: userInput: (required) Description of the element to screenshot. This will be used by the AI to determine which element to pick from the results. Be as detailed as possible.
+args: keywords: (required) Comma-separated list of keywords related to the element. These will be used to search for the element on the page.
 args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
 args: filename: (optional) The name of the file to create. Defaults to screenshot.png
 tools: service

@@ -15,10 +15,14 @@ import { randomBytes } from 'node:crypto'
 import { Mutex } from 'async-mutex'
 import { screenshot } from './screenshot'
 import path from 'node:path'
+import { loadSettingsFile } from './settings'
+import * as os from 'node:os'
 
 const mutex = new Mutex()
 
 async function main (): Promise<void> {
+  const settings = loadSettingsFile()
+
   const app = express()
   // Get port from the environment variable or use 9888 if it is not defined
   const port = process.env.PORT ?? 9888
@@ -46,10 +50,31 @@ async function main (): Promise<void> {
       return
     }
 
-    const sessionID: string = process.env.GPTSCRIPT_WORKSPACE_ID
-    const sessionDir: string = path.resolve(process.env.GPTSCRIPT_WORKSPACE_DIR) + '/browser_session'
-    if (!existsSync(sessionDir)) {
-      mkdirSync(sessionDir)
+    let sessionID: string
+    let sessionDir: string
+
+    if (settings.useDefaultSession === true) {
+      sessionID = 'default'
+      switch (os.platform()) {
+        case 'win32':
+          sessionDir = path.join(os.homedir(), 'AppData', 'Local', 'Google', 'Chrome', 'User Data')
+          break
+        case 'darwin':
+          sessionDir = path.join(os.homedir(), 'Library', 'Application Support', 'Google', 'Chrome')
+          break
+        case 'linux':
+          sessionDir = path.join(os.homedir(), '.config', 'google-chrome')
+          break
+        default:
+          throw new Error('unsupported OS: ' + os.platform())
+      }
+    } else {
+      sessionID = process.env.GPTSCRIPT_WORKSPACE_ID
+      sessionDir = path.resolve(process.env.GPTSCRIPT_WORKSPACE_DIR) + '/browser_session'
+
+      if (!existsSync(sessionDir)) {
+        mkdirSync(sessionDir)
+      }
     }
 
     let pageID = randomBytes(8).toString('hex')
@@ -110,6 +135,11 @@ async function main (): Promise<void> {
       allElements = true
     }
 
+    let matchTextOnly = false
+    if (data.matchTextOnly === 'true' || data.matchTextOnly === true) {
+      matchTextOnly = true
+    }
+
     if (req.path === '/browse') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       res.send(await browse(page, website, 'browse', pageID, printPageID))
@@ -120,15 +150,15 @@ async function main (): Promise<void> {
     } else if (req.path === '/getPageImages') {
       res.send(await browse(page, website, 'getPageImages', pageID, printPageID))
     } else if (req.path === '/click') {
-      await click(page, userInput, keywords.map((keyword) => keyword.trim()), allElements)
+      await click(page, userInput, keywords.map((keyword) => keyword.trim()), allElements, matchTextOnly)
     } else if (req.path === '/fill') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await fill(page, userInput, data.content ?? '', keywords)
+      await fill(page, userInput, data.content ?? '', keywords, matchTextOnly)
     } else if (req.path === '/enter') {
       await enter(page)
     } else if (req.path === '/check') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await check(page, userInput, keywords)
+      await check(page, userInput, keywords, matchTextOnly)
     } else if (req.path === '/select') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       await select(page, userInput, data.option ?? '')

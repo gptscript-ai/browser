@@ -3,7 +3,6 @@ import * as cheerio from 'cheerio'
 import { delay } from './delay'
 import { exec } from '@gptscript-ai/gptscript'
 import { Tool } from '@gptscript-ai/gptscript/lib/tool'
-import { type Locator } from '@playwright/test'
 import { URL } from 'url'
 import TurndownService from 'turndown'
 
@@ -92,16 +91,35 @@ export async function browse (page: Page, website: string, mode: string, pageID:
 }
 
 // inspect inspects a webpage and returns a locator for a specific element based on the user's input and action.
-export async function inspect (page: Page, userInput: string, action: string, keywords?: string[]): Promise<string[]> {
-  let elementData = await summarize(page, keywords ?? [], action)
-  // If no data found, try to find the element without keywords first
-  if (elementData === '' && keywords == null) {
-    elementData = await summarize(page, [], action)
+export async function inspect (page: Page, userInput: string, action: string, matchTextOnly: boolean, keywords?: string[]): Promise<string[]> {
+  if (userInput === '') {
+    // This shouldn't happen, since the LLM is told that it must fill in the user input,
+    // but in case it doesn't, just use the keywords.
+    userInput = keywords?.join(' ') ?? ''
   }
+
+  let elementData = ''
+  const modes = ['matchAll', 'oneSibling', 'twoSiblings', 'parent', 'grandparent', 'matchAny']
+  for (const mode of modes) {
+    elementData = await summarize(page, keywords ?? [], action, mode, matchTextOnly)
+    if (elementData !== '') {
+      break
+    }
+  }
+  if (elementData === '') {
+    // Do it again, but split the keywords by space
+    for (const mode of modes) {
+      elementData = await summarize(page, keywords?.join(' ')?.split(' ') ?? [], action, mode, matchTextOnly)
+      if (elementData !== '') {
+        break
+      }
+    }
+  }
+
   // Scroll the page to get more data and try to find the element
-  // Retry 60 times also to give user time to sign in if the landing page requires sign in
+  // Retry 10 times also to give user time to sign in if the landing page requires sign in
   let retry = 0
-  while (elementData === '' && retry < 60) {
+  while (elementData === '' && retry < 10) {
     await page.evaluate(() => {
       const allElements = Array.from(document.querySelectorAll('div'))
       const scrollables = allElements.filter(e => ((e.getAttribute('style')?.includes('overflow: auto') ?? false) || (e.getAttribute('style')?.includes('overflow: scroll') ?? false)))
@@ -110,26 +128,43 @@ export async function inspect (page: Page, userInput: string, action: string, ke
       }
     })
     await delay(2000)
-    elementData = await summarize(page, keywords ?? [], action)
+    elementData = await summarize(page, keywords ?? [], action, 'matchAny', matchTextOnly)
     retry++
+  }
+
+  // Safeguard to try to avoid breaking the context window
+  if (elementData.length > 200000) {
+    elementData = elementData.substring(0, 200000)
   }
 
   const instructions = getActionInstructions(action, { userInput, elementData })
   const tool = new Tool({ instructions })
 
-  const output = (await exec(tool, {})).replace('\n', '').trim()
-
+  const output = (await exec(tool, { model: 'gpt-4o' })).replace('\n', '').trim()
   return [output]
 }
 
-export async function inspectForSelect (page: Page, userInput: string, userSelection: string, keywords?: string[]): Promise<{ locator: string, option: string }> {
-  let elementData = await summarize(page, keywords ?? [], 'select')
-  if (elementData === '' && keywords == null) {
-    elementData = await summarize(page, [], 'select')
+export async function inspectForSelect (page: Page, userInput: string, userSelection: string, keywords?: string[]): Promise<{ selector: string, option: string }> {
+  let elementData = ''
+  const modes = ['matchAll', 'oneSibling', 'twoSiblings', 'parent', 'grandparent']
+  for (const mode of modes) {
+    elementData = await summarize(page, keywords ?? [], 'select', mode, false)
+    if (elementData !== '') {
+      break
+    }
+  }
+  if (elementData === '') {
+    // Do it again, but split the keywords by space
+    for (const mode of modes) {
+      elementData = await summarize(page, keywords?.join(' ')?.split(' ') ?? [], 'select', mode, false)
+      if (elementData !== '') {
+        break
+      }
+    }
   }
 
   let retry = 0
-  while (elementData === '' && retry < 15) {
+  while (elementData === '' && retry < 10) {
     await page.evaluate(() => {
       const allElements = Array.from(document.querySelectorAll('div'))
       const scrollables = allElements.filter(e => ((e.getAttribute('style')?.includes('overflow: auto') ?? false) || (e.getAttribute('style')?.includes('overflow: scroll') ?? false)))
@@ -138,21 +173,136 @@ export async function inspectForSelect (page: Page, userInput: string, userSelec
       }
     })
     await delay(2000)
-    elementData = await summarize(page, keywords ?? [], 'select')
+    elementData = await summarize(page, keywords ?? [], 'select', 'matchAny', false)
     retry++
   }
 
   const instructions = getActionInstructions('select', { userInput, userSelection, elementData })
   const tool = new Tool({ instructions })
 
-  const output = (await exec(tool, {})).replace('\n', '').trim()
+  const output = (await exec(tool, { model: 'gpt-4o' })).replace('\n', '').trim()
   console.log(output)
 
   return JSON.parse(output)
 }
 
+function matchKeywords ($: cheerio.CheerioAPI, e: cheerio.Element, keywords: string[], mode: string, textOnly: boolean): string | null {
+  let html = ''
+  let text = ''
+  switch (mode) {
+    case 'matchAll':
+      if (textOnly && keywords.every(keyword => $(e).text().toLowerCase() === keyword.toLowerCase() || $(e).attr('value')?.toLowerCase() === keyword.toLowerCase())) {
+        return $.html(e)
+      } else if (!textOnly && keywords.every(keyword => $.html(e).toLowerCase().includes(keyword.toLowerCase()))) {
+        return $.html(e)
+      }
+      break
+    case 'oneSibling':
+      if (textOnly) {
+        if (e.prev !== null) {
+          text += $(e.prev).text()
+          html += $.html(e.prev)
+        }
+        text += $(e).text()
+        html += $.html(e)
+        if (e.next !== null) {
+          text += $(e.next).text()
+          html += $.html(e.next)
+        }
+        if (keywords.every(keyword => text.toLowerCase() === keyword.toLowerCase() || $(e).attr('value')?.toLowerCase() === keyword.toLowerCase())) {
+          return html
+        }
+      } else {
+        if (e.prev !== null) {
+          html += $.html(e.prev)
+        }
+        html += $.html(e)
+        if (e.next !== null) {
+          html += $.html(e.next)
+        }
+        if (keywords.every(keyword => html.toLowerCase().includes(keyword.toLowerCase()))) {
+          return html
+        }
+      }
+      break
+    case 'twoSiblings':
+      if (textOnly) {
+        if (e.prev?.prev !== null) {
+          text += $(e.prev?.prev).text()
+          html += $.html(e.prev?.prev)
+        }
+        if (e.prev !== null) {
+          text += $(e.prev).text()
+          html += $.html(e.prev)
+        }
+        text += $(e).text()
+        html += $.html(e)
+        if (e.next !== null) {
+          text += $(e.next).text()
+          html += $.html(e.next)
+        }
+        if (e.next?.next !== null) {
+          text += $(e.next?.next).text()
+          html += $.html(e.next?.next)
+        }
+        if (keywords.every(keyword => text.toLowerCase() === keyword.toLowerCase() || $(e).attr('value')?.toLowerCase() === keyword.toLowerCase())) {
+          return html
+        }
+      } else {
+        if (e.prev?.prev !== null) {
+          html += $.html(e.prev?.prev)
+        }
+        if (e.prev !== null) {
+          html += $.html(e.prev)
+        }
+        html += $.html(e)
+        if (e.next !== null) {
+          html += $.html(e.next)
+        }
+        if (e.next?.next !== null) {
+          html += $.html(e.next?.next)
+        }
+        if (keywords.every(keyword => html.toLowerCase().includes(keyword.toLowerCase()))) {
+          return html
+        }
+      }
+      break
+    case 'parent':
+      if (e.parent !== null) {
+        text = $(e.parent).text()
+        html = $.html(e.parent)
+        if (textOnly && keywords.every(keyword => text.toLowerCase() === keyword.toLowerCase() || $(e).attr('value')?.toLowerCase() === keyword.toLowerCase())) {
+          return html
+        } else if (!textOnly && keywords.every(keyword => html.toLowerCase().includes(keyword.toLowerCase()))) {
+          return html
+        }
+      }
+      break
+    case 'grandparent':
+      if (e.parent?.parent !== null) {
+        text = $(e.parent?.parent).text()
+        html = $.html(e.parent?.parent)
+        if (textOnly && keywords.every(keyword => text.toLowerCase() === keyword.toLowerCase() || $(e).attr('value')?.toLowerCase() === keyword.toLowerCase())) {
+          return html
+        } else if (!textOnly && keywords.every(keyword => html.toLowerCase().includes(keyword.toLowerCase()))) {
+          return html
+        }
+      }
+      break
+    case 'matchAny':
+      if (textOnly && keywords.some(keyword => $(e).text().toLowerCase() === keyword.toLowerCase() || $(e).attr('value')?.toLowerCase() === keyword.toLowerCase())) {
+        return $.html(e)
+      } else if (keywords.some(keyword => $.html(e).toLowerCase().includes(keyword.toLowerCase()))) {
+        return $.html(e)
+      }
+      break
+  }
+
+  return null
+}
+
 // summarize returns relevant HTML elements for the given keywords and action
-export async function summarize (page: Page, keywords: string[], action: string): Promise<string> {
+export async function summarize (page: Page, keywords: string[], action: string, mode: string, matchTextOnly: boolean): Promise<string> {
   const htmlContent = await getPageHTML(page)
   const $ = cheerio.load(htmlContent)
 
@@ -161,57 +311,50 @@ export async function summarize (page: Page, keywords: string[], action: string)
   if (action === 'fill') {
     $('textarea').each(function () {
       if (keywords.length !== 0) {
-        for (const keyword of keywords) {
-          if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-            resp += $.html(this)
-            break
-          }
+        const res = matchKeywords($, this, keywords, mode, matchTextOnly)
+        if (res !== null) {
+          resp += res + '\n\n'
         }
       } else {
-        resp += $.html(this)
+        resp += $.html(this) + '\n\n'
       }
     })
     $('input[id]').each(function () {
       if (keywords.length !== 0) {
-        for (const keyword of keywords) {
-          if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-            resp += $.html(this)
-            break
-          }
+        const res = matchKeywords($, this, keywords, mode, matchTextOnly)
+        if (res !== null) {
+          resp += res + '\n\n'
         }
       } else {
-        resp += $.html(this)
+        resp += $.html(this) + '\n\n'
       }
     })
     $('input').each(function () {
       if (keywords.length !== 0) {
-        for (const keyword of keywords) {
-          if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-            resp += $.html(this)
-            break
-          }
+        const res = matchKeywords($, this, keywords, mode, matchTextOnly)
+        if (res !== null) {
+          resp += res + '\n\n'
         }
       } else {
-        resp += $.html(this)
+        resp += $.html(this) + '\n\n'
       }
     })
     $('form').each(function () {
       if (keywords.length !== 0) {
-        for (const keyword of keywords) {
-          if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-            resp += $.html(this)
-            break
-          }
+        const res = matchKeywords($, this, keywords, mode, matchTextOnly)
+        if (res !== null) {
+          resp += res + '\n\n'
         }
       } else {
-        resp += $.html(this)
+        resp += $.html(this) + '\n\n'
       }
     })
     $('div').each(function () {
       if (keywords.length !== 0) {
-        for (const keyword of keywords) {
-          if ($(this).attr('contenteditable') === 'true' && $.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-            resp += $.html(this)
+        if ($(this).attr('contenteditable') === 'true') {
+          const res = matchKeywords($, this, keywords, mode, matchTextOnly)
+          if (res !== null) {
+            resp += res + '\n\n'
           }
         }
       }
@@ -219,20 +362,17 @@ export async function summarize (page: Page, keywords: string[], action: string)
   }
 
   if (action === 'check') {
-    $('input[type="checkbox"]').each(function () {
-      // return parent element for more context
-      const html = $(this).parent().html()?.toString() ?? ''
-      for (const keyword of keywords) {
-        if (html.toLowerCase().includes(keyword.toLowerCase())) {
-          resp += html
-        }
+    $('input[type="checkbox"]').parents().each(function () {
+      const res = matchKeywords($, this, keywords, mode, matchTextOnly)
+      if (res !== null) {
+        resp += res + '\n\n'
       }
     })
   }
 
   if (action === 'select') {
     $('select').each(function () {
-      resp += $.html(this)
+      resp += $.html(this) + '\n\n'
     })
   }
 
@@ -254,66 +394,38 @@ export async function summarize (page: Page, keywords: string[], action: string)
     $('[onload]').removeAttr('onload')
     $('[onerror]').removeAttr('onerror')
     $('body').each(function () {
-      resp += findKeywordsInElement($, this, keywords)
+      resp += findKeywordsInElement($, this, keywords, mode === 'matchAll') + '\n\n'
     })
   }
 
   if (action === 'click') {
     $('a').each(function () {
       if (keywords.length !== 0) {
-        for (const keyword of keywords) {
-          if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-            resp += '<a '
-            for (const attr of this.attributes) {
-              resp += ` ${attr.name}="${attr.value}"`
-            }
-            resp += ' />'
-            break
-          }
+        const res = matchKeywords($, this, keywords, mode, matchTextOnly)
+        if (res !== null) {
+          resp += res + '\n\n'
         }
       } else {
-        resp += '<a '
-        for (const attr of this.attributes) {
-          resp += ` ${attr.name}="${attr.value}"`
-        }
-        resp += ' />'
+        resp += $.html(this) + '\n\n'
       }
     })
     $('button').each(function () {
       if (keywords.length !== 0) {
-        for (const keyword of keywords) {
-          if ($.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-            resp += '<button '
-            for (const attr of this.attributes) {
-              resp += ` ${attr.name}="${attr.value}"`
-            }
-            resp += ' />'
-            break
-          }
+        const res = matchKeywords($, this, keywords, mode, matchTextOnly)
+        if (res !== null) {
+          resp += res + '\n\n'
         }
       } else {
-        resp += '<button '
-        for (const attr of this.attributes) {
-          resp += ` ${attr.name}="${attr.value}"`
-        }
-        resp += ' />'
+        resp += $.html(this) + '\n\n'
       }
     })
 
     $('div').each(function () {
       if (keywords.length !== 0) {
-        for (const keyword of keywords) {
-          if (hasNoNonTextChildren(this) && $.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-            resp += '<div '
-            for (const attr of this.attributes) {
-              resp += ` ${attr.name}="${attr.value}"`
-            }
-            resp += '>'
-            for (const c of this.children) {
-              resp += $.html(c)
-            }
-            resp += '</div>'
-            break
+        if (hasNoNonTextChildren(this)) {
+          const res = matchKeywords($, this, keywords, mode, matchTextOnly)
+          if (res !== null) {
+            resp += res + '\n\n'
           }
         }
       } else {
@@ -321,28 +433,20 @@ export async function summarize (page: Page, keywords: string[], action: string)
         for (const attr of this.attributes) {
           resp += ` ${attr.name}="${attr.value}"`
         }
-        resp += '>'
+        resp += '>' + '\n'
         for (const c of this.children) {
-          resp += $.html(c)
+          resp += $.html(c) + '\n'
         }
-        resp += '</div>'
+        resp += '</div>' + '\n\n'
       }
     })
 
     $('span').each(function () {
       if (keywords.length !== 0) {
-        for (const keyword of keywords) {
-          if (hasNoNonTextChildren(this) && $.html(this).toLowerCase().includes(keyword.toLowerCase())) {
-            resp += '<span '
-            for (const attr of this.attributes) {
-              resp += ` ${attr.name}="${attr.value}"`
-            }
-            resp += '>'
-            for (const c of this.children) {
-              resp += $.html(c)
-            }
-            resp += '</span>'
-            break
+        if (hasNoNonTextChildren(this)) {
+          const res = matchKeywords($, this, keywords, mode, matchTextOnly)
+          if (res !== null) {
+            resp += res + '\n\n'
           }
         }
       } else {
@@ -350,17 +454,18 @@ export async function summarize (page: Page, keywords: string[], action: string)
         for (const attr of this.attributes) {
           resp += ` ${attr.name}="${attr.value}"`
         }
-        resp += '>'
+        resp += '>' + '\n'
         for (const c of this.children) {
-          resp += $.html(c)
+          resp += $.html(c) + '\n'
         }
-        resp += '</span>'
+        resp += '</span>' + '\n\n'
       }
     })
   }
 
-  // Remove duplicate newlines and return
-  return resp.replace(/\n+/g, '\n')
+  console.log(mode + ': ', resp)
+
+  return resp
 }
 
 function hasNoNonTextChildren (elem: cheerio.Element): boolean {
@@ -416,61 +521,62 @@ async function getPageHTML (page: Page): Promise<string> {
 function getActionInstructions (action: string, args: Record<string, string>): string {
   switch (action) {
     case 'select':
-      return `You are an expert with deep knowledge of web pages, the Playwright library, and HTML elements.
-    Based on the provided HTML below, return the locator that can be used to locate the select element described by the user input.
-    Use an ID (prefixed with #) or text locator if possible. Do not use ARIA locators.
-    Validate the locator before you return it. Do not escape the locator unless necessary.
-    Also determine which of the options in the select element should be selected based on the user selection.
-    Return a JSON object with the keys 'locator' and 'option'.
-    
-    User Input: ${args.userInput}
-    User Selection: ${args.userSelection}
-    
-    HTML:
-    ${args.elementData}
-    
-    
-    Example output: {"locator":"[data-testid='SearchForm-sortBy']","option":"newest"}`
+      return `You are an expert with deep knowledge of web pages and HTML elements.
+      Based on the provided HTML below, return the CSS selector that can be used to locate the select element described by the user input.
+      Pseudo-classes like :has-text() (i.e. article:has-text("hello")) are available for use.
+      Do not escape the selector unless necessary.
+      Also determine which of the options in the select element should be selected based on the user selection.
+      Return a JSON object with the keys 'selector' and 'option'.
+
+      User Input: ${args.userInput}
+      User Selection: ${args.userSelection}
+
+      HTML:
+      ${args.elementData}
+
+
+      Example output: {"selector":"[data-testid='SearchForm-sortBy']","option":"newest"}`
 
     case 'screenshot':
-      return `You are an expert with deep knowledge of web pages, the Playwright library, and HTML elements.
-      Based on the provided HTML below, return the locator that can be used to locate the element described by the user input.
+      return `You are an expert with deep knowledge of web pages and HTML elements.
+      Based on the provided HTML below, return the CSS selector that can be used to locate the element described by the user input.
+      Pseudo-classes like :has-text() (i.e. article:has-text("hello")) are available for use.
       The user is trying to take a screenshot of part of the page, so if there are multiple elements that look relevant,
       select the outermost one.
-      Validate the locator before you return it. Do not escape the loator unless necessary.
-      Return exactly one locator that is the best match, and don't quote the output.
-      
+      Do not escape the selector unless necessary.
+      Return exactly one selector that is the best match, and don't quote the output.
+
       User Input: ${args.userInput}
-      
+
       HTML:
       ${args.elementData}`
 
     default:
-      return `You are an expert with deep knowledge of web pages, the Playwright library, and HTML elements.
-    Based on the provided HTML below, return the locator that can be used to locate the element described by the user input.
-    Always use an ID (prefixed with #) or text locator if possible. Do not use ARIA locators.
-    Validate the locator before you return it. Do not escape the locator unless necessary.
-    Return exactly one locator that is the best match, and don't quote the output.
+      return `You are an expert with deep knowledge of web pages and HTML elements.
+      Based on the provided HTML below, return the CSS selector that can be used to locate the element described by the user input.
+      Pseudo-classes like :has-text() (i.e. article:has-text("hello")) are available for use.
+      Do not escape the selector unless necessary.
+      Return exactly one selector that is the best match, and don't quote the output.
+      If possible, use a selector that is specific to the keywords that were provided.
 
-    User Input: ${args.userInput}
+      User Input: ${args.userInput}
 
-    HTML:
-    ${args.elementData}`
+      HTML:
+      ${args.elementData}`
   }
 }
 
-const findKeywordsInElement = ($: cheerio.CheerioAPI, elem: cheerio.Element, keywords: string[]): string => {
-  for (const k of keywords) {
-    for (const attr of elem.attributes) {
-      if (attr.name.toLowerCase().includes(k.toLowerCase()) ||
-      attr.value.toLowerCase().includes(k.toLowerCase())) {
-        return $.html(elem)
-      }
+const findKeywordsInElement = ($: cheerio.CheerioAPI, elem: cheerio.Element, keywords: string[], matchAll: boolean): string => {
+  for (const attr of elem.attributes) {
+    if (keywords.every(keyword => attr.value.toLowerCase().includes(keyword.toLowerCase())) ||
+    keywords.every(keyword => attr.name.toLowerCase().includes(keyword.toLowerCase()))) {
+      return $.html(elem)
     }
   }
+
   let result = ''
   for (const c of $(elem).children()) {
-    result += findKeywordsInElement($, c, keywords)
+    result += findKeywordsInElement($, c, keywords, matchAll)
   }
   return result
 }
