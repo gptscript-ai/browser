@@ -1,4 +1,4 @@
-export: browse, getPageContents, getPageImages, click, fill, check, select, enter, login, scroll
+export: browse, getPageContents, getPageImages, click, fill, check, select, enter, login, scroll, close, screenshot
 description: A toolset that can be used to browse and navigate websites.
 
 ---
@@ -6,6 +6,7 @@ name: browse
 description: Navigates to a website, but does not return the content.
 args: website: The URL of the website to visit. Must be an HTTPS URL.
 args: headless: Whether to launch actual browser. Set to false unless asked otherwise.
+args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
 tools: service
 
 #!http://service.daemon.gptscript.local/browse
@@ -15,6 +16,7 @@ name: getPageContents
 description: Navigates to a website and returns its HTML content.
 args: website: (optional) The HTTPS URL of the website to visit. If unspecified, the current page will be used.
 args: headless: Whether to launch actual browser. Set to false unless asked otherwise.
+args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
 tools: service
 
 #!http://service.daemon.gptscript.local/getPageContents
@@ -24,6 +26,7 @@ name: getPageImages
 description: Navigates to a website and returns all the img tags in raw HTML, including their source URLs.
 args: website: The URL of the website to visit. Must be an HTTPS URL.
 args: headless: Whether to launch actual browser. Set to false unless asked otherwise.
+args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
 tools: service
 
 #!http://service.daemon.gptscript.local/getPageImages
@@ -41,6 +44,8 @@ name: click
 description: Clicks buttons on the web page.
 args: userInput: (required) Description of the element to click on.
 args: keywords: (required) Comma-separated list of keywords related to the element.
+args: allElements: (optional, default false) Clicks on all elements that match the description, instead of only the first.
+args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
 tools: service
 
 #!http://service.daemon.gptscript.local/click
@@ -51,6 +56,7 @@ description: Fills text into an element on the web page.
 args: userInput: Description of the element to fill.
 args: content: The text to fill into the element.
 args: keywords: (required) Comma-separated list of keywords related to the element.
+args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
 tools: service
 
 #!http://service.daemon.gptscript.local/fill
@@ -58,6 +64,7 @@ tools: service
 ---
 name: enter
 description: Presses the enter key. Useful after filling out a form or other input.
+args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
 tools: service
 
 #!http://service.daemon.gptscript.local/enter
@@ -65,6 +72,7 @@ tools: service
 ---
 name: scroll
 description: Loads more content by scrolling to the bottom of the page. Useful for sites like Reddit which support infinite scroll.
+args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
 tools: service
 
 #!http://service.daemon.gptscript.local/scrollToBottom
@@ -74,6 +82,7 @@ name: check
 description: Checks a radio button on the web page.
 args: userInput: Description of the element to check.
 args: keywords: (required) Comma-separated list of keywords related to the element.
+args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
 tools: service
 
 #!http://service.daemon.gptscript.local/check
@@ -83,9 +92,29 @@ name: select
 description: Selects an option from a dropdown menu.
 args: userInput: Description of the element to select from.
 args: option: The option to choose in the dropdown.
+args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
 tools: service
 
 #!http://service.daemon.gptscript.local/select
+
+---
+name: close
+description: Closes a page.
+args: pageID: (required) The ID of the page to close.
+tools: service
+
+#!http://service.daemon.gptscript.local/close
+
+---
+name: screenshot
+description: Takes a screenshot of an element. Saves it as a PNG file in the current workspace
+args: userInput: Description of the element to take a screenshot of.
+args: keywords: (required) Comma-separated list of keywords related to the element.
+args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
+args: filename: (optional) The name of the file to create. Defaults to screenshot.png
+tools: service
+
+#!http://service.daemon.gptscript.local/screenshot
 
 ---
 name: service
