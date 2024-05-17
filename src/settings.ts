@@ -2,6 +2,7 @@ import * as fs from 'node:fs'
 
 export interface BrowserSettings {
   useDefaultSession?: boolean
+  headless?: boolean
 }
 
 export function loadSettingsFile (): BrowserSettings {

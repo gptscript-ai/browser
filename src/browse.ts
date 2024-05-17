@@ -11,7 +11,7 @@ export async function close (page: Page): Promise<void> {
 }
 
 // browse navigates to the website and returns the text content of the page (if print is true)
-export async function browse (page: Page, website: string, mode: string, pageID: string, printPageID: boolean): Promise<string> {
+export async function browse (page: Page, website: string, mode: string, tabID: string, printTabID: boolean): Promise<string> {
   if (website !== '' && page.url() !== website) {
     try {
       await page.goto(website)
@@ -46,6 +46,7 @@ export async function browse (page: Page, website: string, mode: string, pageID:
       elem.before(children)
       elem.remove()
     })
+    $('noscript').remove()
     $('style').remove()
     $('img').remove()
     $('[style]').removeAttr('style')
@@ -84,8 +85,8 @@ export async function browse (page: Page, website: string, mode: string, pageID:
     })
   }
 
-  if (printPageID) {
-    resp = `Page ID: ${pageID}\n` + resp
+  if (printTabID) {
+    resp = `Tab ID: ${tabID}\n` + resp
   }
   return resp.split('\n').filter(line => line.trim() !== '').join('\n')
 }
@@ -100,17 +101,37 @@ export async function inspect (page: Page, userInput: string, action: string, ma
 
   let elementData = ''
   const modes = ['matchAll', 'oneSibling', 'twoSiblings', 'parent', 'grandparent', 'matchAny']
-  for (const mode of modes) {
-    elementData = await summarize(page, keywords ?? [], action, mode, matchTextOnly)
-    if (elementData !== '') {
-      break
+  // TODO - improve this so that we stop faster
+  if (matchTextOnly) {
+    const elementDataPromises = modes.map(async mode => await summarize(page, keywords ?? [], action, mode, true))
+    const results = await Promise.all(elementDataPromises)
+    for (const result of results) {
+      if (result !== '') {
+        elementData = result
+        break
+      }
     }
   }
+
+  if (elementData === '') {
+    // Do it again, but don't match text only
+    const elementDataPromises = modes.map(async mode => await summarize(page, keywords ?? [], action, mode, false))
+    const results = await Promise.all(elementDataPromises)
+    for (const result of results) {
+      if (result !== '') {
+        elementData = result
+        break
+      }
+    }
+  }
+
   if (elementData === '') {
     // Do it again, but split the keywords by space
-    for (const mode of modes) {
-      elementData = await summarize(page, keywords?.join(' ')?.split(' ') ?? [], action, mode, matchTextOnly)
-      if (elementData !== '') {
+    const elementDataPromises = modes.map(async mode => await summarize(page, keywords?.join(' ')?.split(' ') ?? [], action, mode, true))
+    const results = await Promise.all(elementDataPromises)
+    for (const result of results) {
+      if (result !== '') {
+        elementData = result
         break
       }
     }
@@ -128,7 +149,7 @@ export async function inspect (page: Page, userInput: string, action: string, ma
       }
     })
     await delay(2000)
-    elementData = await summarize(page, keywords ?? [], action, 'matchAny', matchTextOnly)
+    elementData = await summarize(page, keywords ?? [], action, 'matchAny', false)
     retry++
   }
 
@@ -137,10 +158,12 @@ export async function inspect (page: Page, userInput: string, action: string, ma
     elementData = elementData.substring(0, 200000)
   }
 
+  console.log('elementData:', elementData)
+
   const instructions = getActionInstructions(action, { userInput, elementData })
   const tool = new Tool({ instructions })
 
-  const output = (await exec(tool, { model: 'gpt-4o' })).replace('\n', '').trim()
+  const output = (await exec(tool, { model: 'gpt-3.5-turbo' })).replace('\n', '').trim()
   return [output]
 }
 
@@ -180,7 +203,7 @@ export async function inspectForSelect (page: Page, userInput: string, userSelec
   const instructions = getActionInstructions('select', { userInput, userSelection, elementData })
   const tool = new Tool({ instructions })
 
-  const output = (await exec(tool, { model: 'gpt-4o' })).replace('\n', '').trim()
+  const output = (await exec(tool, { model: 'gpt-3.5-turbo' })).replace('\n', '').trim()
   console.log(output)
 
   return JSON.parse(output)
@@ -191,7 +214,7 @@ function matchKeywords ($: cheerio.CheerioAPI, e: cheerio.Element, keywords: str
   let text = ''
   switch (mode) {
     case 'matchAll':
-      if (textOnly && keywords.every(keyword => $(e).text().toLowerCase() === keyword.toLowerCase() || $(e).attr('value')?.toLowerCase() === keyword.toLowerCase())) {
+      if (textOnly && keywords.every(keyword => $(e).text().toLowerCase().includes(keyword.toLowerCase()) || $(e).attr('value')?.toLowerCase().includes(keyword.toLowerCase()))) {
         return $.html(e)
       } else if (!textOnly && keywords.every(keyword => $.html(e).toLowerCase().includes(keyword.toLowerCase()))) {
         return $.html(e)
@@ -209,7 +232,7 @@ function matchKeywords ($: cheerio.CheerioAPI, e: cheerio.Element, keywords: str
           text += $(e.next).text()
           html += $.html(e.next)
         }
-        if (keywords.every(keyword => text.toLowerCase() === keyword.toLowerCase() || $(e).attr('value')?.toLowerCase() === keyword.toLowerCase())) {
+        if (keywords.every(keyword => text.toLowerCase().includes(keyword.toLowerCase()) || $(e).attr('value')?.toLowerCase().includes(keyword.toLowerCase()))) {
           return html
         }
       } else {
@@ -245,7 +268,7 @@ function matchKeywords ($: cheerio.CheerioAPI, e: cheerio.Element, keywords: str
           text += $(e.next?.next).text()
           html += $.html(e.next?.next)
         }
-        if (keywords.every(keyword => text.toLowerCase() === keyword.toLowerCase() || $(e).attr('value')?.toLowerCase() === keyword.toLowerCase())) {
+        if (keywords.every(keyword => text.toLowerCase().includes(keyword.toLowerCase()) || $(e).attr('value')?.toLowerCase().includes(keyword.toLowerCase()))) {
           return html
         }
       } else {
@@ -271,7 +294,7 @@ function matchKeywords ($: cheerio.CheerioAPI, e: cheerio.Element, keywords: str
       if (e.parent !== null) {
         text = $(e.parent).text()
         html = $.html(e.parent)
-        if (textOnly && keywords.every(keyword => text.toLowerCase() === keyword.toLowerCase() || $(e).attr('value')?.toLowerCase() === keyword.toLowerCase())) {
+        if (textOnly && keywords.every(keyword => text.toLowerCase().includes(keyword.toLowerCase()) || $(e).attr('value')?.toLowerCase().includes(keyword.toLowerCase()))) {
           return html
         } else if (!textOnly && keywords.every(keyword => html.toLowerCase().includes(keyword.toLowerCase()))) {
           return html
@@ -282,7 +305,7 @@ function matchKeywords ($: cheerio.CheerioAPI, e: cheerio.Element, keywords: str
       if (e.parent?.parent !== null) {
         text = $(e.parent?.parent).text()
         html = $.html(e.parent?.parent)
-        if (textOnly && keywords.every(keyword => text.toLowerCase() === keyword.toLowerCase() || $(e).attr('value')?.toLowerCase() === keyword.toLowerCase())) {
+        if (textOnly && keywords.every(keyword => text.toLowerCase().includes(keyword.toLowerCase()) || $(e).attr('value')?.toLowerCase().includes(keyword.toLowerCase()))) {
           return html
         } else if (!textOnly && keywords.every(keyword => html.toLowerCase().includes(keyword.toLowerCase()))) {
           return html
@@ -290,7 +313,7 @@ function matchKeywords ($: cheerio.CheerioAPI, e: cheerio.Element, keywords: str
       }
       break
     case 'matchAny':
-      if (textOnly && keywords.some(keyword => $(e).text().toLowerCase() === keyword.toLowerCase() || $(e).attr('value')?.toLowerCase() === keyword.toLowerCase())) {
+      if (textOnly && keywords.some(keyword => $(e).text().toLowerCase().includes(keyword.toLowerCase()) || $(e).attr('value')?.toLowerCase().includes(keyword.toLowerCase()))) {
         return $.html(e)
       } else if (keywords.some(keyword => $.html(e).toLowerCase().includes(keyword.toLowerCase()))) {
         return $.html(e)
@@ -305,6 +328,10 @@ function matchKeywords ($: cheerio.CheerioAPI, e: cheerio.Element, keywords: str
 export async function summarize (page: Page, keywords: string[], action: string, mode: string, matchTextOnly: boolean): Promise<string> {
   const htmlContent = await getPageHTML(page)
   const $ = cheerio.load(htmlContent)
+
+  $('noscript').remove()
+  $('style').remove()
+  $('[style]').removeAttr('style')
 
   let resp = ''
   // For search, we need to find all the input and textarea elements and figure that out
@@ -388,8 +415,6 @@ export async function summarize (page: Page, keywords: string[], action: string,
     $('h5').remove()
     $('li').remove()
     $('a').remove()
-    $('style').remove()
-    $('[style]').removeAttr('style')
     $('[onclick]').removeAttr('onclick')
     $('[onload]').removeAttr('onload')
     $('[onerror]').removeAttr('onerror')

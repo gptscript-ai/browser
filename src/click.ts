@@ -36,6 +36,17 @@ export async function click (page: Page, userInput: string, keywords: string[], 
                 done = true
                 break
               }
+            } else {
+              const parent = page.locator('css=a').filter({ has: element })
+              if (parent !== null) {
+                const href = await parent.evaluate((el) => el.getAttribute('href'))
+                if (href !== null && href !== undefined && href !== '' && !href.startsWith('#')) {
+                  console.log('click link bypass: ', new URL(href, page.url()).href)
+                  await page.goto(new URL(href, page.url()).href)
+                  done = true
+                  break
+                }
+              }
             }
           }
 
