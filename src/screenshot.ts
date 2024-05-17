@@ -3,12 +3,12 @@ import { inspect } from './browse'
 import path from 'node:path'
 
 export async function screenshot (page: Page, userInput: string, keywords: string[], filename: string): Promise<void> {
-  const locators = await inspect(page, userInput, 'screenshot', keywords)
+  const locators = await inspect(page, userInput, 'screenshot', false, keywords)
   let done = false
   for (const locator of locators) {
     console.log(locator)
     try {
-      const elements = await page.locator(locator).all()
+      const elements = await page.locator('css=' + locator).all()
       if (elements.length === 0) {
         console.log('no elements found for locator ' + locator)
         continue
