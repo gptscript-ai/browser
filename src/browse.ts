@@ -463,8 +463,6 @@ export async function summarize (page: Page, keywords: string[], action: string,
     })
   }
 
-  console.log(mode + ': ', resp)
-
   return resp
 }
 
