@@ -1,22 +1,20 @@
-export: browse, getPageContents, getPageImages, click, fill, check, select, enter, login, scroll, close, screenshot
+export: browse, getPageContents, getPageImages, click, fill, check, select, enter, scroll, close, screenshot, back, forward
 description: A toolset that can be used to browse and navigate websites.
 
 ---
 name: browse
 description: Navigates to a website, but does not return the content.
 args: website: The URL of the website to visit. Must be an HTTPS URL.
-args: headless: Whether to launch actual browser. Set to false unless asked otherwise.
-args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
+args: tabID: (optional) The ID of the tab. If unspecified, a new tab will be created, and its ID will be returned.
 tools: service
 
 #!http://service.daemon.gptscript.local/browse
 
 ---
 name: getPageContents
-description: Navigates to a website and returns its HTML content.
-args: website: (optional) The HTTPS URL of the website to visit. If unspecified, the current page will be used.
-args: headless: Whether to launch actual browser. Set to false unless asked otherwise.
-args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
+description: Returns the content of a website in Markdown format.
+args: website: (optional) The HTTPS URL of the website to visit. If unspecified, the current tab will be used.
+args: tabID: (optional) The ID of the tab. If unspecified, a new tab will be created.
 tools: service
 
 #!http://service.daemon.gptscript.local/getPageContents
@@ -25,40 +23,31 @@ tools: service
 name: getPageImages
 description: Navigates to a website and returns all the img tags in raw HTML, including their source URLs.
 args: website: The URL of the website to visit. Must be an HTTPS URL.
-args: headless: Whether to launch actual browser. Set to false unless asked otherwise.
-args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
+args: tabID: (optional) The ID of the tab. If unspecified, a new tab will be created, and its ID will be returned.
 tools: service
 
 #!http://service.daemon.gptscript.local/getPageImages
 
 ---
-name: login
-description: login a website.
-args: website: the website url to browse. The url should have https protocol prepend.
-tools: service
-
-#!http://service.daemon.gptscript.local/login
-
----
 name: click
-description: Clicks elements on the web page.
+description: Clicks elements on the web page. Useful for clicking buttons, links, etc.
 args: userInput: (required) Description of the element to click on. This will be used by the AI to determine which element to pick from the results. Be as detailed as possible.
 args: keywords: (required) Comma-separated list of keywords related to the element. These will be used to search for the element on the page.
-args: matchTextOnly: (optional) Only look for the keywords in the actual text inside of the elements. Useful in cases where the user has described text appearing on the page.
-args: allElements: (optional, default false) Clicks on all elements that match the description, instead of only the first.
-args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
+args: allElements: (optional, default false) Clicks on all matching elements, instead of only clicking on the first matched element.
+args: matchTextOnly: (optional, default false) Matches elements based on their text content and ignores their attributes. Useful for cases where the user has provided an exact piece of text that they want to interact with on the page.
+args: tabID: (required) The ID of the tab.
 tools: service
 
 #!http://service.daemon.gptscript.local/click
 
 ---
 name: fill
-description: Fills text into an element on the web page.
+description: Fills text into an element on the web page. Useful for filling out forms and other input fields.
 args: userInput: (required) Description of the element to fill. This will be used by the AI to determine which element to pick from the results. Be as detailed as possible.
 args: keywords: (required) Comma-separated list of keywords related to the element. These will be used to search for the element on the page.
-args: matchTextOnly: (optional) Only look for the keywords in the actual text inside of the elements. Useful in cases where the user has described text appearing on the page.
+args: matchTextOnly: (optional, default false) Matches elements based on their text content and ignores their attributes. Useful for cases where the user has provided an exact piece of text that they want to interact with on the page.
 args: content: The text to fill into the element.
-args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
+args: tabID: (required) The ID of the tab.
 tools: service
 
 #!http://service.daemon.gptscript.local/fill
@@ -66,15 +55,15 @@ tools: service
 ---
 name: enter
 description: Presses the enter key. Useful after filling out a form or other input.
-args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
+args: tabID: (required) The ID of the tab.
 tools: service
 
 #!http://service.daemon.gptscript.local/enter
 
 ---
 name: scroll
-description: Loads more content by scrolling to the bottom of the page. Useful for sites like Reddit which support infinite scroll.
-args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
+description: Scrolls to the bottom of the page, possibly loading more content. Useful for sites like Reddit which support infinite scroll.
+args: tabID: (required) The ID of the tab.
 tools: service
 
 #!http://service.daemon.gptscript.local/scrollToBottom
@@ -84,18 +73,18 @@ name: check
 description: Checks a radio button on the web page.
 args: userInput: (required) Description of the element to check. This will be used by the AI to determine which element to pick from the results. Be as detailed as possible.
 args: keywords: (required) Comma-separated list of keywords related to the element. These will be used to search for the element on the page.
-args: matchTextOnly: (optional) Only look for the keywords in the actual text inside of the elements. Useful in cases where the user has described text appearing on the page.
-args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
+args: matchTextOnly: (optional, default false) Matches elements based on their text content and ignores their attributes. Useful for cases where the user has provided an exact piece of text that they want to interact with on the page.
+args: tabID: (optional) The ID of the tab. If unspecified, a new tab will be created.
 tools: service
 
 #!http://service.daemon.gptscript.local/check
 
 ---
 name: select
-description: Selects an option from a dropdown menu.
+description: Selects an option from a select element.
 args: userInput: (required) Description of the element to select from.
 args: option: The option to choose in the dropdown.
-args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
+args: tabID: (required) The ID of the tab.
 tools: service
 
 #!http://service.daemon.gptscript.local/select
@@ -103,21 +92,38 @@ tools: service
 ---
 name: close
 description: Closes a page.
-args: pageID: (required) The ID of the page to close.
+args: tabID: (required) The ID of the tab to close.
 tools: service
 
 #!http://service.daemon.gptscript.local/close
 
 ---
 name: screenshot
-description: Takes a screenshot of an element. Saves it as a PNG file in the current workspace
+description: Takes a screenshot of an element. Saves it as a PNG file in the workspace.
 args: userInput: (required) Description of the element to screenshot. This will be used by the AI to determine which element to pick from the results. Be as detailed as possible.
 args: keywords: (required) Comma-separated list of keywords related to the element. These will be used to search for the element on the page.
-args: pageID: (optional) The ID of the page. If unspecified, a new page will be created.
+args: matchTextOnly: (optional, default false) Matches elements based on their text content and ignores their attributes. Useful for cases where the user has provided an exact piece of text that they want to interact with on the page.
+args: tabID: (optional) The ID of the tab. If unspecified, a new tab will be created.
 args: filename: (optional) The name of the file to create. Defaults to screenshot.png
 tools: service
 
 #!http://service.daemon.gptscript.local/screenshot
+
+---
+name: back
+description: Navigates to back to the previous site in history.
+args: tabID: (required) The ID of the tab.
+tools: service
+
+#!http://service.daemon.gptscript.local/back
+
+---
+name: forward
+description: Navigates to forward to the next site in history.
+args: tabID: (required) The ID of the tab.
+tools: service
+
+#!http://service.daemon.gptscript.local/forward
 
 ---
 name: service

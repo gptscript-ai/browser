@@ -30,7 +30,7 @@ async function main (): Promise<void> {
   app.use(bodyParser.json())
 
   const contextMap: Record<string, BrowserContext> = {} // mapping of session ID => browser context
-  const pageMap: Record<string, Record<string, Page>> = {} // mapping of session ID => page ID => page
+  const pageMap: Record<string, Record<string, Page>> = {} // mapping of session ID => tab ID => page
 
   // gptscript requires "GET /" to return 200 status code
   app.get('/', (req: Request, res: Response) => {
@@ -77,11 +77,11 @@ async function main (): Promise<void> {
       }
     }
 
-    let pageID = randomBytes(8).toString('hex')
-    let printPageID = true
-    if (data.pageID !== undefined) {
-      pageID = data.pageID
-      printPageID = false
+    let tabID = randomBytes(8).toString('hex')
+    let printTabID = true
+    if (data.tabID !== undefined) {
+      tabID = data.tabID
+      printTabID = false
     }
 
     let context: BrowserContext
@@ -92,7 +92,7 @@ async function main (): Promise<void> {
         sessionDir,
         {
           userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          headless: data.headless === 'true',
+          headless: settings.headless ?? false,
           viewport: null,
           channel: 'chrome',
           args: ['--start-maximized', '--disable-blink-features=AutomationControlled'],
@@ -112,21 +112,21 @@ async function main (): Promise<void> {
     const release = await mutex.acquire()
 
     let page: Page
-    if (pageMap[sessionID]?.[pageID] !== undefined) {
-      page = pageMap[sessionID][pageID]
+    if (pageMap[sessionID]?.[tabID] !== undefined) {
+      page = pageMap[sessionID][tabID]
       if (page.isClosed()) {
         page = await context.newPage()
         if (pageMap[sessionID] === undefined) {
           pageMap[sessionID] = {}
         }
-        pageMap[sessionID][pageID] = page
+        pageMap[sessionID][tabID] = page
       }
     } else {
       page = await context.newPage()
       if (pageMap[sessionID] === undefined) {
         pageMap[sessionID] = {}
       }
-      pageMap[sessionID][pageID] = page
+      pageMap[sessionID][tabID] = page
     }
     await page.bringToFront()
 
@@ -135,30 +135,25 @@ async function main (): Promise<void> {
       allElements = true
     }
 
-    let matchTextOnly = false
-    if (data.matchTextOnly === 'true' || data.matchTextOnly === true) {
-      matchTextOnly = true
-    }
-
     if (req.path === '/browse') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      res.send(await browse(page, website, 'browse', pageID, printPageID))
+      res.send(await browse(page, website, 'browse', tabID, printTabID))
     } else if (req.path === '/getPageContents') {
-      res.send(await browse(page, website, 'getPageContents', pageID, printPageID))
+      res.send(await browse(page, website, 'getPageContents', tabID, printTabID))
     } else if (req.path === '/getPageLinks') {
-      res.send(await browse(page, website, 'getPageLinks', pageID, printPageID))
+      res.send(await browse(page, website, 'getPageLinks', tabID, printTabID))
     } else if (req.path === '/getPageImages') {
-      res.send(await browse(page, website, 'getPageImages', pageID, printPageID))
+      res.send(await browse(page, website, 'getPageImages', tabID, printTabID))
     } else if (req.path === '/click') {
-      await click(page, userInput, keywords.map((keyword) => keyword.trim()), allElements, matchTextOnly)
+      await click(page, userInput, keywords.map((keyword) => keyword.trim()), allElements, (data.matchTextOnly as boolean) ?? false)
     } else if (req.path === '/fill') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await fill(page, userInput, data.content ?? '', keywords, matchTextOnly)
+      await fill(page, userInput, data.content ?? '', keywords, (data.matchTextOnly as boolean) ?? false)
     } else if (req.path === '/enter') {
       await enter(page)
     } else if (req.path === '/check') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await check(page, userInput, keywords, matchTextOnly)
+      await check(page, userInput, keywords, (data.matchTextOnly as boolean) ?? false)
     } else if (req.path === '/select') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       await select(page, userInput, data.option ?? '')
@@ -168,8 +163,12 @@ async function main (): Promise<void> {
       await scrollToBottom(page)
     } else if (req.path === '/close') {
       await close(page)
+    } else if (req.path === '/back') {
+      await page.goBack()
+    } else if (req.path === '/forward') {
+      await page.goForward()
     } else if (req.path === '/screenshot') {
-      await screenshot(page, userInput, keywords, (data.filename as string) ?? 'screenshot.png')
+      await screenshot(page, userInput, keywords, (data.filename as string) ?? 'screenshot.png', (data.matchTextOnly as boolean) ?? false)
     }
 
     release()
