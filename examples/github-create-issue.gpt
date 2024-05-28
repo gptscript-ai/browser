@@ -1,9 +1,0 @@
-Tools: github.com/gptscript-ai/browser
-
-1. Browse github.com/gptscript-ai/browser.
-2. Search current page and find `Issues`, then click on it.
-3. Search current page and find `New Issue`, then click on it.
-4. Search current page and find `issue title`, and then fill with "this is a test title"
-5. Search current page and find `issue description`, and then fill with "this is a test description".
-6. Click on `Submit new issue`.
-7. Click on `Close issue` using exact match.

@@ -1,0 +1,16 @@
+tools: github.com/gptscript-ai/browser, summarizer
+
+First, go to nytimes.com/technology. Scroll the page to the bottom. Then, click on the search tab. Then, search for "anthropic".
+Select "newest" from the sort by dropdown. Find the links to the first five articles in the list of Search articles.
+Do not get links to articles on other parts of the page. Do not get links to any articles that appear after the 5th
+article in the list.
+
+Then, call the summarizer for each article to get its summary.
+Then, print all the summaries. Add the article name and link before each summary.
+
+---
+name: summarizer
+tools: github.com/gptscript-ai/browser
+args: link: the link to the article
+
+Get the contents of the article and generate a summary of it. Return the summary.

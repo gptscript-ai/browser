@@ -1,0 +1,7 @@
+# This tool should be run with an argument and with a workspace, i.e. `gptscript --workspace my-workspace-dir yahoo-finance-screenshot.gpt '{"company":"Microsoft"}'
+tools: github.com/gptscript-ai/browser
+args: company: the name of the company to get stock info for
+
+Go to https://finance.yahoo.com and search for $company. Get the current stock quote and tell it to me.
+Click the YTD (match text only) button on the stock's chart.
+Then, take a screenshot of only the stock's quote chart (and not the rest of the page). Use the default filename.

@@ -1,9 +1,10 @@
 import { type Page } from 'playwright'
 import { inspect } from './browse'
 import path from 'node:path'
+import { type BrowserSettings } from './settings'
 
-export async function screenshot (page: Page, userInput: string, keywords: string[], filename: string, matchTextOnly: boolean): Promise<void> {
-  const locators = await inspect(page, userInput, 'screenshot', matchTextOnly, keywords)
+export async function screenshot (page: Page, userInput: string, keywords: string[], filename: string, matchTextOnly: boolean, settings: BrowserSettings): Promise<void> {
+  const locators = await inspect(page, userInput, 'screenshot', matchTextOnly, settings, keywords)
   let done = false
   for (const locator of locators) {
     console.log(locator)

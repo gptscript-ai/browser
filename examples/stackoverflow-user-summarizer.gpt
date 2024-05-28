@@ -1,0 +1,34 @@
+tools: github.com/gptscript-ai/browser, tag-summarizer
+
+Browse to https://stackoverflow.com/tags and find the 10 most popular tags, as well as the link to the page for each tag.
+Then, for each tag, provide the link to the tag's page to the tag-summarizer.
+Close the page when you are done.
+
+---
+name: tag-summarizer
+tools: github.com/gptscript-ai/browser, user-summarizer
+args: tag: name of the tag
+
+Go to https://stackoverflow.com/tags/$tag/topusers. Find the top 10 users for the last 30 days.
+Then, for each user, provide the link to the user's profile to the user-summarizer, as well as the tag name and the user's rank.
+Close the page when you are done.
+
+---
+name: user-summarizer
+tools: github.com/gptscript-ai/browser, sys.write, sys.ls
+args: link: link to the user profile on StackOverflow
+args: tag: the tag name corresponding to the user
+args: rank: the rank number corresponding to the user
+
+Generate a summary of the user's profile. It should look similar to this:
+
+**Alexander Nenashev's StackOverflow Profile Summary**
+
+- **Profile**: [Alexander Nenashev](https://stackoverflow.com/users/14098260/alexander-nenashev)
+- **About**: Alexander is a Vanilla JS and Vue.js enthusiast. He has been a member of Stack Overflow for 3 years and 8 months and was last seen this week. Alexander has a reputation of 16,664 and has reached over 1.4 million people. He has provided 1,062 answers and asked 14 questions, placing him in the top 0.03% this year.
+- **Contact**: aleks4hour@gmail.com
+- **Badges**: Alexander has earned 3 gold badges, including Unsung Hero, Electorate, and Fanatic; 8 silver badges; and 22 bronze badges.
+- **Top Tags**: His expertise includes JavaScript, arrays, HTML, Vue.js, vuejs3, and CSS.
+- **Location**: Milky Way
+
+Take the summary and write it to ./summaries/<tag>/<rank>-<user>.md. Then close the page and say "Done".

@@ -1,10 +1,11 @@
 import { type Page } from 'playwright'
 import { delay } from './delay'
 import { inspect } from './browse'
+import { type BrowserSettings } from './settings'
 
 // click navigates a link or clicks on an element matching the given keywords.
-export async function click (page: Page, userInput: string, keywords: string[], allElements: boolean, matchTextOnly: boolean): Promise<void> {
-  const locators = await inspect(page, userInput, 'click', matchTextOnly, keywords)
+export async function click (page: Page, userInput: string, keywords: string[], allElements: boolean, matchTextOnly: boolean, settings: BrowserSettings): Promise<void> {
+  const locators = await inspect(page, userInput, 'click', matchTextOnly, settings, keywords)
   console.log(locators)
   let done = false
   for (const locator of locators) {

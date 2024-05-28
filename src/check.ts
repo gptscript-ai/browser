@@ -1,10 +1,11 @@
 import { type Page } from 'playwright'
 import { inspect } from './browse'
 import { delay } from './delay'
+import { type BrowserSettings } from './settings'
 
 // check checks a checkbox or radio button.
-export async function check (page: Page, userInput: string, keywords: string[], matchTextOnly: boolean): Promise<void> {
-  const locators = await inspect(page, userInput, 'check', matchTextOnly, keywords)
+export async function check (page: Page, userInput: string, keywords: string[], matchTextOnly: boolean, settings: BrowserSettings): Promise<void> {
+  const locators = await inspect(page, userInput, 'check', matchTextOnly, settings, keywords)
   console.log(locators)
   for (const locator of locators) {
     try {
