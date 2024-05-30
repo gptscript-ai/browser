@@ -137,26 +137,26 @@ async function main (): Promise<void> {
 
     if (req.path === '/browse') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      res.send(await browse(page, website, 'browse', tabID, printTabID))
+      res.send(await browse(page, website, 'browse', tabID, printTabID, settings))
     } else if (req.path === '/getPageContents') {
-      res.send(await browse(page, website, 'getPageContents', tabID, printTabID))
+      res.send(await browse(page, website, 'getPageContents', tabID, printTabID, settings))
     } else if (req.path === '/getPageLinks') {
-      res.send(await browse(page, website, 'getPageLinks', tabID, printTabID))
+      res.send(await browse(page, website, 'getPageLinks', tabID, printTabID, settings))
     } else if (req.path === '/getPageImages') {
-      res.send(await browse(page, website, 'getPageImages', tabID, printTabID))
+      res.send(await browse(page, website, 'getPageImages', tabID, printTabID, settings))
     } else if (req.path === '/click') {
-      await click(page, userInput, keywords.map((keyword) => keyword.trim()), allElements, (data.matchTextOnly as boolean) ?? false)
+      await click(page, userInput, keywords.map((keyword) => keyword.trim()), allElements, (data.matchTextOnly as boolean) ?? false, settings)
     } else if (req.path === '/fill') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await fill(page, userInput, data.content ?? '', keywords, (data.matchTextOnly as boolean) ?? false)
+      await fill(page, userInput, data.content ?? '', keywords, (data.matchTextOnly as boolean) ?? false, settings)
     } else if (req.path === '/enter') {
       await enter(page)
     } else if (req.path === '/check') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await check(page, userInput, keywords, (data.matchTextOnly as boolean) ?? false)
+      await check(page, userInput, keywords, (data.matchTextOnly as boolean) ?? false, settings)
     } else if (req.path === '/select') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await select(page, userInput, data.option ?? '')
+      await select(page, userInput, data.option ?? '', settings)
     } else if (req.path === '/login') {
       await login(context, website)
     } else if (req.path === '/scrollToBottom') {
@@ -168,7 +168,7 @@ async function main (): Promise<void> {
     } else if (req.path === '/forward') {
       await page.goForward()
     } else if (req.path === '/screenshot') {
-      await screenshot(page, userInput, keywords, (data.filename as string) ?? 'screenshot.png', (data.matchTextOnly as boolean) ?? false)
+      await screenshot(page, userInput, keywords, (data.filename as string) ?? 'screenshot.png', (data.matchTextOnly as boolean) ?? false, settings)
     }
 
     release()

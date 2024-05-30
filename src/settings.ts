@@ -3,6 +3,7 @@ import * as fs from 'node:fs'
 export interface BrowserSettings {
   useDefaultSession?: boolean
   headless?: boolean
+  lookForShadowRoot?: boolean
 }
 
 export function loadSettingsFile (): BrowserSettings {

@@ -1,0 +1,19 @@
+tools: github.com/gptscript-ai/browser, summarizer
+
+Browse to https://www.reddit.com/r/gaming/top/?t=week. Scroll the page two times to load more content.
+Look at the post titles and determine which titles might make sense to include in a newsletter.
+Consider at least 10 post titles before continuing.
+
+A title can be considered newsworthy if it is about something that is happening in the gaming industry.
+Do not include titles that are just personal stories from individual people.
+
+Call the summarizer tool to get a summary of each newsworthy post. Do this for no more than 10 posts.
+If the post is just a link to an article, give the link to the article instead of the Reddit post.
+Write all of the summaries into a Markdown article. Make sure the link to the article is included with each summary.
+
+---
+name: summarizer
+tools: github.com/gptscript-ai/browser
+args: url: the URL of the page to summarize
+
+Return a summary of the contents of the page.

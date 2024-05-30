@@ -5,13 +5,14 @@ import { exec } from '@gptscript-ai/gptscript'
 import { Tool } from '@gptscript-ai/gptscript/lib/tool'
 import { URL } from 'url'
 import TurndownService from 'turndown'
+import { type BrowserSettings } from './settings'
 
 export async function close (page: Page): Promise<void> {
   await page.close()
 }
 
 // browse navigates to the website and returns the text content of the page (if print is true)
-export async function browse (page: Page, website: string, mode: string, tabID: string, printTabID: boolean): Promise<string> {
+export async function browse (page: Page, website: string, mode: string, tabID: string, printTabID: boolean, settings: BrowserSettings): Promise<string> {
   if (website !== '' && page.url() !== website) {
     try {
       await page.goto(website)
@@ -34,7 +35,7 @@ export async function browse (page: Page, website: string, mode: string, tabID: 
 
   let resp: string = ''
   if (mode === 'getPageContents') {
-    const html = await getPageHTML(page)
+    const html = await getPageHTML(page, settings)
     const $ = cheerio.load(html)
 
     $('script').each(function () {
@@ -71,14 +72,14 @@ export async function browse (page: Page, website: string, mode: string, tabID: 
       resp += turndownService.turndown($.html(this))
     })
   } else if (mode === 'getPageLinks') {
-    const html = await getPageHTML(page)
+    const html = await getPageHTML(page, settings)
     const $ = cheerio.load(html)
     $('a').each(function () {
       const link = new URL($(this).attr('href') ?? '', page.url()).toString()
       resp += `[${$(this).text().trim()}](${link.trim()})\n`
     })
   } else if (mode === 'getPageImages') {
-    const html = await getPageHTML(page)
+    const html = await getPageHTML(page, settings)
     const $ = cheerio.load(html)
     $('img').each(function () {
       resp += `${Object.entries($(this).attr() ?? '').toString()}\n`
@@ -92,7 +93,7 @@ export async function browse (page: Page, website: string, mode: string, tabID: 
 }
 
 // inspect inspects a webpage and returns a locator for a specific element based on the user's input and action.
-export async function inspect (page: Page, userInput: string, action: string, matchTextOnly: boolean, keywords?: string[]): Promise<string[]> {
+export async function inspect (page: Page, userInput: string, action: string, matchTextOnly: boolean, settings: BrowserSettings, keywords?: string[]): Promise<string[]> {
   if (userInput === '') {
     // This shouldn't happen, since the LLM is told that it must fill in the user input,
     // but in case it doesn't, just use the keywords.
@@ -103,7 +104,7 @@ export async function inspect (page: Page, userInput: string, action: string, ma
   const modes = ['matchAll', 'oneSibling', 'twoSiblings', 'parent', 'grandparent', 'matchAny']
   // TODO - improve this so that we stop faster
   if (matchTextOnly) {
-    const elementDataPromises = modes.map(async mode => await summarize(page, keywords ?? [], action, mode, true))
+    const elementDataPromises = modes.map(async mode => await summarize(page, keywords ?? [], action, mode, true, settings))
     const results = await Promise.all(elementDataPromises)
     for (const result of results) {
       if (result !== '') {
@@ -115,7 +116,7 @@ export async function inspect (page: Page, userInput: string, action: string, ma
 
   if (elementData === '') {
     // Do it again, but don't match text only
-    const elementDataPromises = modes.map(async mode => await summarize(page, keywords ?? [], action, mode, false))
+    const elementDataPromises = modes.map(async mode => await summarize(page, keywords ?? [], action, mode, false, settings))
     const results = await Promise.all(elementDataPromises)
     for (const result of results) {
       if (result !== '') {
@@ -127,7 +128,7 @@ export async function inspect (page: Page, userInput: string, action: string, ma
 
   if (elementData === '') {
     // Do it again, but split the keywords by space
-    const elementDataPromises = modes.map(async mode => await summarize(page, keywords?.join(' ')?.split(' ') ?? [], action, mode, true))
+    const elementDataPromises = modes.map(async mode => await summarize(page, keywords?.join(' ')?.split(' ') ?? [], action, mode, true, settings))
     const results = await Promise.all(elementDataPromises)
     for (const result of results) {
       if (result !== '') {
@@ -149,7 +150,7 @@ export async function inspect (page: Page, userInput: string, action: string, ma
       }
     })
     await delay(2000)
-    elementData = await summarize(page, keywords ?? [], action, 'matchAny', false)
+    elementData = await summarize(page, keywords ?? [], action, 'matchAny', false, settings)
     retry++
   }
 
@@ -167,11 +168,11 @@ export async function inspect (page: Page, userInput: string, action: string, ma
   return [output]
 }
 
-export async function inspectForSelect (page: Page, userInput: string, userSelection: string, keywords?: string[]): Promise<{ selector: string, option: string }> {
+export async function inspectForSelect (page: Page, userInput: string, userSelection: string, settings: BrowserSettings, keywords?: string[]): Promise<{ selector: string, option: string }> {
   let elementData = ''
   const modes = ['matchAll', 'oneSibling', 'twoSiblings', 'parent', 'grandparent']
   for (const mode of modes) {
-    elementData = await summarize(page, keywords ?? [], 'select', mode, false)
+    elementData = await summarize(page, keywords ?? [], 'select', mode, false, settings)
     if (elementData !== '') {
       break
     }
@@ -179,7 +180,7 @@ export async function inspectForSelect (page: Page, userInput: string, userSelec
   if (elementData === '') {
     // Do it again, but split the keywords by space
     for (const mode of modes) {
-      elementData = await summarize(page, keywords?.join(' ')?.split(' ') ?? [], 'select', mode, false)
+      elementData = await summarize(page, keywords?.join(' ')?.split(' ') ?? [], 'select', mode, false, settings)
       if (elementData !== '') {
         break
       }
@@ -196,7 +197,7 @@ export async function inspectForSelect (page: Page, userInput: string, userSelec
       }
     })
     await delay(2000)
-    elementData = await summarize(page, keywords ?? [], 'select', 'matchAny', false)
+    elementData = await summarize(page, keywords ?? [], 'select', 'matchAny', false, settings)
     retry++
   }
 
@@ -206,7 +207,7 @@ export async function inspectForSelect (page: Page, userInput: string, userSelec
   const output = (await exec(tool, { model: 'gpt-3.5-turbo' })).replace('\n', '').trim()
   console.log(output)
 
-  return JSON.parse(output)
+  return JSON.parse(output as string)
 }
 
 function matchKeywords ($: cheerio.CheerioAPI, e: cheerio.Element, keywords: string[], mode: string, textOnly: boolean): string | null {
@@ -325,8 +326,8 @@ function matchKeywords ($: cheerio.CheerioAPI, e: cheerio.Element, keywords: str
 }
 
 // summarize returns relevant HTML elements for the given keywords and action
-export async function summarize (page: Page, keywords: string[], action: string, mode: string, matchTextOnly: boolean): Promise<string> {
-  const htmlContent = await getPageHTML(page)
+export async function summarize (page: Page, keywords: string[], action: string, mode: string, matchTextOnly: boolean, settings: BrowserSettings): Promise<string> {
+  const htmlContent = await getPageHTML(page, settings)
   const $ = cheerio.load(htmlContent)
 
   $('noscript').remove()
@@ -339,7 +340,7 @@ export async function summarize (page: Page, keywords: string[], action: string,
     $('textarea').each(function () {
       if (keywords.length !== 0) {
         const res = matchKeywords($, this, keywords, mode, matchTextOnly)
-        if (res !== null) {
+        if (res !== null && res !== '') {
           resp += res + '\n\n'
         }
       } else {
@@ -349,7 +350,7 @@ export async function summarize (page: Page, keywords: string[], action: string,
     $('input[id]').each(function () {
       if (keywords.length !== 0) {
         const res = matchKeywords($, this, keywords, mode, matchTextOnly)
-        if (res !== null) {
+        if (res !== null && res !== '') {
           resp += res + '\n\n'
         }
       } else {
@@ -359,7 +360,7 @@ export async function summarize (page: Page, keywords: string[], action: string,
     $('input').each(function () {
       if (keywords.length !== 0) {
         const res = matchKeywords($, this, keywords, mode, matchTextOnly)
-        if (res !== null) {
+        if (res !== null && res !== '') {
           resp += res + '\n\n'
         }
       } else {
@@ -369,7 +370,7 @@ export async function summarize (page: Page, keywords: string[], action: string,
     $('form').each(function () {
       if (keywords.length !== 0) {
         const res = matchKeywords($, this, keywords, mode, matchTextOnly)
-        if (res !== null) {
+        if (res !== null && res !== '') {
           resp += res + '\n\n'
         }
       } else {
@@ -380,7 +381,7 @@ export async function summarize (page: Page, keywords: string[], action: string,
       if (keywords.length !== 0) {
         if ($(this).attr('contenteditable') === 'true') {
           const res = matchKeywords($, this, keywords, mode, matchTextOnly)
-          if (res !== null) {
+          if (res !== null && res !== '') {
             resp += res + '\n\n'
           }
         }
@@ -391,7 +392,7 @@ export async function summarize (page: Page, keywords: string[], action: string,
   if (action === 'check') {
     $('input[type="checkbox"]').parents().each(function () {
       const res = matchKeywords($, this, keywords, mode, matchTextOnly)
-      if (res !== null) {
+      if (res !== null && res !== '') {
         resp += res + '\n\n'
       }
     })
@@ -427,7 +428,7 @@ export async function summarize (page: Page, keywords: string[], action: string,
     $('a').each(function () {
       if (keywords.length !== 0) {
         const res = matchKeywords($, this, keywords, mode, matchTextOnly)
-        if (res !== null) {
+        if (res !== null && res !== '') {
           resp += res + '\n\n'
         }
       } else {
@@ -437,7 +438,7 @@ export async function summarize (page: Page, keywords: string[], action: string,
     $('button').each(function () {
       if (keywords.length !== 0) {
         const res = matchKeywords($, this, keywords, mode, matchTextOnly)
-        if (res !== null) {
+        if (res !== null && res !== '') {
           resp += res + '\n\n'
         }
       } else {
@@ -449,7 +450,7 @@ export async function summarize (page: Page, keywords: string[], action: string,
       if (keywords.length !== 0) {
         if (hasNoNonTextChildren(this)) {
           const res = matchKeywords($, this, keywords, mode, matchTextOnly)
-          if (res !== null) {
+          if (res !== null && res !== '') {
             resp += res + '\n\n'
           }
         }
@@ -470,7 +471,7 @@ export async function summarize (page: Page, keywords: string[], action: string,
       if (keywords.length !== 0) {
         if (hasNoNonTextChildren(this)) {
           const res = matchKeywords($, this, keywords, mode, matchTextOnly)
-          if (res !== null) {
+          if (res !== null && res !== '') {
             resp += res + '\n\n'
           }
         }
@@ -520,22 +521,26 @@ const findShadowRoot = (): string => {
   return html
 }
 
-async function getPageHTML (page: Page): Promise<string> {
+async function getPageHTML (page: Page, settings: BrowserSettings): Promise<string> {
   let html = await page.content()
-  // Do a breadth-first search to look for a shadow DOM
-  const shadowRootHTML = await page.evaluate(findShadowRoot)
-  if (shadowRootHTML !== undefined) {
-    html += shadowRootHTML
-  }
 
-  // Check for shadow DOM in iframes
-  for (const f of page.frames()) {
-    try {
-      const shadowRootHTML = await f.locator('body').evaluate(findShadowRoot, { timeout: 7000 })
-      if (shadowRootHTML !== undefined) {
-        html += shadowRootHTML
+  if (settings.lookForShadowRoot === true) {
+    // Do a breadth-first search to look for a shadow DOM
+    const shadowRootHTML = await page.evaluate(findShadowRoot)
+    if (shadowRootHTML !== undefined) {
+      html += shadowRootHTML
+    }
+
+    // Check for shadow DOM in iframes
+    for (const f of page.frames()) {
+      try {
+        const shadowRootHTML = await f.locator('body').evaluate(findShadowRoot, { timeout: 7000 })
+        if (shadowRootHTML !== undefined) {
+          html += shadowRootHTML
+        }
+      } catch (e) {
       }
-    } catch (e) {}
+    }
   }
 
   return html
@@ -543,6 +548,20 @@ async function getPageHTML (page: Page): Promise<string> {
 
 function getActionInstructions (action: string, args: Record<string, string>): string {
   switch (action) {
+    case 'fill':
+      return `You are an expert with deep knowledge of web pages and HTML elements.
+      Based on the provided HTML below, return the CSS selector that can be used to locate the element described by the user input.
+      The element should be a text input, textarea, or contenteditable.
+      Pseudo-classes like :has-text() (i.e. article:has-text("hello")) are available for use.
+      Do not escape the selector unless necessary.
+      Return exactly one selector that is the best match, and don't quote the output.
+      If possible, use a selector that is specific to the keywords that were provided.
+
+      User Input: ${args.userInput}
+
+      HTML:
+      ${args.elementData}`
+
     case 'select':
       return `You are an expert with deep knowledge of web pages and HTML elements.
       Based on the provided HTML below, return the CSS selector that can be used to locate the select element described by the user input.

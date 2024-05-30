@@ -1,0 +1,12 @@
+tools: github.com/gptscript-ai/browser, article-summarizer
+
+Go to the entertainment section of cnn.com and find the top five articles.
+Provide the link to the article-summarizer so that it can create a summary.
+Return to me all five summaries.
+
+---
+name: article-summarizer
+tools: github.com/gptscript-ai/browser
+args: link: the link to the article
+
+Visit the article and generate a summary of it.

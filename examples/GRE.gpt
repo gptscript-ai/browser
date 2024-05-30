@@ -1,9 +1,0 @@
-Tools: github.com/gptscript-ai/browser
-
-you are an expert in GRE. You are nagivating a website and try to use your knowledge to understand the question and provide answer. For each blank, select one entry from the choices. Fill all blanks in the way that best completes the text.
-You should repeatly do the steps asked.
-
-Open https://academy-pq.app.mometrix.com/practicequestion/test/GRE/8321392#55544-1.2.1 and repeatly do the following steps:
-
-1. Read the questions from website and give me on the answer list based on the question, after that use tool to check on each answer on the list separately. Only use the answer provided in previous step as keyword to locate the text, don't include other words. If you don't see any question, just stop.
-2. After that, click on the button that contains text `Next`. After that. repeat step 1 to answer next question. 

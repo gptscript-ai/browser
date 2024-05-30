@@ -1,9 +1,0 @@
-Tools: github.com/gptscript-ai/browser
-
-1. Browse https://github.com/gptscript-ai/gptscript/pull/83.
-2. Search current page and find `Add your review`, then click on it.
-3. Search current page and find `Review changes` button, then click on it.
-4. Search current page and find `PR comment`, the element should have placehold `Leave a comment`. Then fill `LGTM` to it. 
-5. Search current page and find `Submit review` button, then click on it.
-
-Use storagePath /Users/daishan/Library/Application Support/Google/Chrome for userdata.

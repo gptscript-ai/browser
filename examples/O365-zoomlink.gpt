@@ -1,6 +1,0 @@
-Tool: github.com/gptscript-ai/browser
-
-Do the following:
-1. Open outlook.office.com.
-2. Click the button with the text that includes `Zoom` and `Cloud Recording`.
-3. Extract the zoom.us link and passcode and print it.
