@@ -1,14 +1,14 @@
 # GPTScript Browser Tool
 
-This tool enables GPTScript to browse websites, navigate through pages, and execute specific actions seamlessly in the browser.
+This tool enables GPTScript to browse websites, navigate through pages, and execute specific actions seamlessly in Google Chrome.
 
 ## Examples
 
-Explore our built-in examples to learn how to navigate between websites using the browser tool:
+Explore our examples to learn how to navigate between websites using the browser tool:
 
-- [Creating a GitHub Issue](https://github.com/gptscript-ai/browser/blob/main/examples/github-create-issue.gpt)
-- [Approving a GitHub PR](https://github.com/gptscript-ai/browser/blob/main/examples/github-approve-pr.gpt)
-- [Clicking a GitHub Repository](https://github.com/gptscript-ai/browser/blob/main/examples/github-click-repo.gpt)
+- [Generating a gaming newsletter from Reddit posts](https://github.com/gptscript-ai/browser/blob/main/examples/reddit-gaming-newsletter.gpt)
+- [Summarizing top users' profiles on StackOverflow](https://github.com/gptscript-ai/browser/blob/main/examples/stackoverflow-user-summarizer.gpt)
+- [Screenshotting stock data from Yahoo Finance](https://github.com/gptscript-ai/browser/blob/main/examples/yahoo-finance-screenshot.gpt)
 
 Video Demonstrations:
 - [Creating a GitHub Issue](https://www.loom.com/share/c75bc647192c48879762f586d36eacc9)
