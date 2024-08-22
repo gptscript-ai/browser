@@ -92,6 +92,65 @@ export async function browse (page: Page, website: string, mode: string, tabID: 
   return resp.split('\n').filter(line => line.trim() !== '').join('\n')
 }
 
+export async function filterContent (page: Page, tabID: string, printTabID: boolean, filter: string, settings: BrowserSettings): Promise<string> {
+  // Navigate and get the page contents
+  const html = await getPageHTML(page, settings);
+
+  const $ = cheerio.load(html);
+  let filteredContent = '';
+
+  // Check if the filter is an ID, class, or tag selector
+  if (filter.startsWith('#') || filter.startsWith('.') || /^[a-zA-Z]/.test(filter)) {
+    // Use the filter to select elements matching the CSS selector
+    $(filter).each((i, elem) => {
+      filteredContent += $.html(elem);
+    });
+  } else {
+    throw new Error(`Invalid filter format: ${filter}. Use a valid CSS selector.`);
+  }
+
+  // Clean up the filtered content
+  const clean$ = cheerio.load(filteredContent);
+  clean$('script').each(function () {
+    const elem = $(this);
+    // Remove text nodes inside the script tag
+    elem.contents().filter(function () {
+      return this.type === 'text';
+    }).remove();
+    // Extract the remaining content from the script tag
+    const children = elem.contents();
+    elem.before(children);
+    elem.remove();
+  });
+  clean$('noscript, style, img').remove();
+  clean$('[style]').removeAttr('style');
+  clean$('[onclick], [onload], [onerror]').removeAttr('onclick onload onerror');
+
+  // Remove empty divs and spans
+  $('div').each(function () {
+    if ($(this).text() === '' && $(this).children().length === 0) {
+      $(this).remove()
+    }
+  })
+  $('span').each(function () {
+    if ($(this).text() === '' && $(this).children().length === 0) {
+      $(this).remove()
+    }
+  })
+
+  // Remove HTML comment nodes
+  clean$('*').contents().filter(function () {
+    return this.type === 'comment';
+  }).remove();
+
+  let resp = clean$.html().trim();
+  if (printTabID) {
+    resp = `Tab ID: ${tabID}\n` + clean$.html().trim();
+  }
+
+  return resp.split('\n').filter(line => line.trim() !== '').join('\n')
+}
+
 // inspect inspects a webpage and returns a locator for a specific element based on the user's input and action.
 export async function inspect (page: Page, userInput: string, action: string, matchTextOnly: boolean, settings: BrowserSettings, keywords?: string[]): Promise<string[]> {
   if (userInput === '') {
@@ -611,7 +670,7 @@ function getActionInstructions (action: string, args: Record<string, string>): s
 const findKeywordsInElement = ($: cheerio.CheerioAPI, elem: cheerio.Element, keywords: string[], matchAll: boolean): string => {
   for (const attr of elem.attributes) {
     if (keywords.every(keyword => attr.value.toLowerCase().includes(keyword.toLowerCase())) ||
-    keywords.every(keyword => attr.name.toLowerCase().includes(keyword.toLowerCase()))) {
+      keywords.every(keyword => attr.name.toLowerCase().includes(keyword.toLowerCase()))) {
       return $.html(elem)
     }
   }

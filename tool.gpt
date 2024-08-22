@@ -1,4 +1,4 @@
-export: browse, getPageContents, getPageImages, click, fill, check, select, enter, scroll, close, screenshot, back, forward
+export: browse, getPageContents, getPageImages, click, fill, check, select, enter, scroll, close, screenshot, back, forward, filter
 description: A toolset that can be used to browse and navigate websites.
 
 ---
@@ -39,6 +39,15 @@ args: tabID: (required) The ID of the tab.
 tools: service
 
 #!http://service.daemon.gptscript.local/click
+
+---
+name: filter
+description: filter the page to get elements based on specific id, html tag, or class.
+args: filter: (required) the class (eg. '.foo') or id (eg. '#foo') of an object.
+args: tabID: (required) The ID of the tab. If unspecified, a new tab will be created.
+tools: service
+
+#!http://service.daemon.gptscript.local/getFilteredContent
 
 ---
 name: fill
