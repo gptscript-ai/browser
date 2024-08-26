@@ -106,7 +106,7 @@ export async function filterContent (page: Page, tabID: string, printTabID: bool
       filteredContent += $.html(elem);
     });
   } else {
-    throw new Error(`Invalid filter format: ${filter}. Use a valid CSS selector.`);
+    throw new Error(`Invalid filter format: ${filter}. Use a CSS ID, class, or tag selector.`);
   }
 
   // Clean up the filtered content
