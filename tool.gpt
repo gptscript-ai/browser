@@ -44,7 +44,7 @@ tools: service
 name: filter
 description: filter the page to get elements based on specific id, html tag, or class.
 args: filter: (required) the class (eg. '.foo') or id (eg. '#foo') of an object.
-args: tabID: (required) The ID of the tab. If unspecified, a new tab will be created.
+args: tabID: (required) The ID of the tab to filter contents of.
 tools: service
 
 #!http://service.daemon.gptscript.local/getFilteredContent
