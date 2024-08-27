@@ -2,7 +2,7 @@ import express, { type Request, type Response } from 'express'
 import bodyParser from 'body-parser'
 import { type BrowserContext, type Page } from 'playwright'
 import { chromium } from 'playwright'
-import { browse, close } from './browse'
+import { browse, close, filterContent } from './browse'
 import { click } from './click'
 import { fill } from './fill'
 import { enter } from './enter'
@@ -44,6 +44,7 @@ async function main (): Promise<void> {
     const website: string = data.website ?? ''
     const userInput: string = data.userInput ?? ''
     const keywords: string[] = (data.keywords ?? '').split(',')
+    const filter: string = data.filter ?? ''
 
     if (process.env.GPTSCRIPT_WORKSPACE_ID === undefined || process.env.GPTSCRIPT_WORKSPACE_DIR === undefined) {
       res.status(400).send('GPTScript workspace ID and directory are not set')
@@ -138,6 +139,8 @@ async function main (): Promise<void> {
     if (req.path === '/browse') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       res.send(await browse(page, website, 'browse', tabID, printTabID, settings))
+    } else if (req.path === '/getFilteredContent') {
+      res.send(await filterContent(page, tabID, printTabID, filter, settings))
     } else if (req.path === '/getPageContents') {
       res.send(await browse(page, website, 'getPageContents', tabID, printTabID, settings))
     } else if (req.path === '/getPageLinks') {
