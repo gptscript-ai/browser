@@ -7,7 +7,7 @@ export interface BrowserSettings {
 }
 
 export function loadSettingsFile (): BrowserSettings {
-  if (process.env.GPTSCRIPT_BROWSER_SETTINGS_FILE != null) {
+  if (process.env.GPTSCRIPT_BROWSER_SETTINGS_FILE != null && process.env.GPTSCRIPT_BROWSER_SETTINGS_FILE !== '') {
     try {
       const contents = fs.readFileSync(process.env.GPTSCRIPT_BROWSER_SETTINGS_FILE)
       return JSON.parse(contents.toString())
